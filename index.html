@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Proactive Supply Chain Group — Org Chart</title>
 
-  <!-- BalkanGraph OrgChart JS (free Community edition). Requires internet. -->
-  <script src="https://cdn.balkan.app/orgchart-community.js"
-          onerror="window.__ORGCHART_FAILED__=true"></script>
+  <!-- dabeng/OrgChart (MIT) + deps. jQuery-plugin line (4.0.1); needs internet first load. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/orgchart@4.0.1/dist/css/jquery.orgchart.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/orgchart@4.0.1/dist/js/jquery.orgchart.min.js"></script>
 
   <style>
     :root {
@@ -15,12 +18,15 @@
       --psc-red-dark: #B71C1C;
       --psc-charcoal: #1F2937;
       --psc-slate: #6B7280;
+      --psc-amber: #D97706;
+      --psc-teal: #0F766E;
       --psc-muted: #9CA3AF;
       --bg: #F9FAFB;
       --card: #FFFFFF;
       --border: #E5E7EB;
       --text: #111827;
       --text-secondary: #6B7280;
+      --hi: #FACC15;
       --radius: 8px;
       --shadow: 0 1px 2px rgba(17, 24, 39, 0.06), 0 1px 3px rgba(17, 24, 39, 0.08);
       --shadow-lg: 0 20px 40px rgba(17, 24, 39, 0.25);
@@ -30,162 +36,157 @@
     html, body { margin: 0; padding: 0; height: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.45;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
+      background: var(--bg); color: var(--text); line-height: 1.45;
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ---- Header / toolbar ---- */
+    /* ---- Header ---- */
     .app-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-      padding: 14px 24px;
-      border-bottom: 1px solid var(--border);
-      background: var(--card);
-      flex: 0 0 auto;
-      z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 18px; flex-wrap: wrap; padding: 12px 22px;
+      border-bottom: 1px solid var(--border); background: var(--card);
+      flex: 0 0 auto; z-index: 20;
     }
     .titles { display: flex; flex-direction: column; }
-    .kicker {
-      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--psc-red); margin: 0;
-    }
+    .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--psc-red); margin: 0; }
     .app-title { font-size: 18px; font-weight: 700; margin: 2px 0 0; }
 
     .header-mid { flex: 1 1 240px; display: flex; justify-content: center; }
-    .search-wrap { position: relative; width: 100%; max-width: 360px; }
+    .search-wrap { position: relative; width: 100%; max-width: 380px; }
     .search-input {
-      width: 100%; font: inherit; font-size: 14px;
-      padding: 9px 12px 9px 34px;
+      width: 100%; font: inherit; font-size: 14px; padding: 9px 56px 9px 34px;
       border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
     }
-    .search-input:focus {
-      outline: none; border-color: var(--psc-red);
-      box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.12); background: #fff;
+    .search-input:focus { outline: none; border-color: var(--psc-red); box-shadow: 0 0 0 3px rgba(211,47,47,0.12); background: #fff; }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 14px; pointer-events: none; }
+    .search-count { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--text-secondary); pointer-events: none; }
+    .search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      border: none; background: transparent; cursor: pointer; color: var(--text-secondary);
+      width: 22px; height: 22px; border-radius: 5px; font-size: 16px; line-height: 1;
     }
-    .search-icon {
-      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-      color: var(--text-secondary); font-size: 14px; pointer-events: none;
-    }
-    .search-count {
-      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-      font-size: 11px; color: var(--text-secondary);
-    }
+    .search-clear:hover { background: var(--bg); color: var(--psc-red); }
 
     .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn {
-      font: inherit; font-size: 13px; font-weight: 600;
-      padding: 8px 13px; border-radius: 6px;
-      border: 1px solid var(--border); background: var(--card); color: var(--text);
-      cursor: pointer; white-space: nowrap;
+      font: inherit; font-size: 13px; font-weight: 600; padding: 8px 13px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; white-space: nowrap;
       transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
     }
     .btn:hover { border-color: var(--psc-red); color: var(--psc-red); }
     .btn:focus-visible { outline: 2px solid var(--psc-red); outline-offset: 2px; }
     .btn-primary { background: var(--psc-red); border-color: var(--psc-red); color: #fff; }
     .btn-primary:hover { background: var(--psc-red-dark); border-color: var(--psc-red-dark); color: #fff; }
-    .btn-danger:hover { border-color: var(--psc-red); color: var(--psc-red); }
+
+    /* ---- Filter bar ---- */
+    .filter-bar {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 10px 22px; border-bottom: 1px solid var(--border); background: var(--card); flex: 0 0 auto; z-index: 15;
+    }
+    .filter-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary); margin-right: 4px; }
+    .filter-btn {
+      font: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px;
+      transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+    }
+    .filter-btn:hover { border-color: var(--psc-red); }
+    .filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot.csuite { background: var(--psc-red); }
+    .dot.warehousing { background: var(--psc-charcoal); }
+    .dot.freight { background: var(--psc-slate); }
+    .dot.specialized { background: var(--psc-amber); }
+    .dot.support { background: var(--psc-teal); }
 
     /* ---- Main / chart ---- */
     .main { flex: 1 1 auto; display: flex; min-height: 0; position: relative; }
-    #tree { flex: 1 1 auto; height: 100%; min-width: 0; }
+    #chart-container { flex: 1 1 auto; height: 100%; min-width: 0; overflow: auto; background: var(--bg); }
+    .orgchart { background: transparent; padding: 24px; }
+    .proactive-chart .lines .topLine { border-top-color: var(--border); }
+    .proactive-chart .lines .rightLine { border-right-color: var(--border); }
+    .proactive-chart .lines .leftLine { border-left-color: var(--border); }
+    .proactive-chart .lines .downLine { background-color: var(--border); }
+
+    /* node card */
+    .proactive-chart .node {
+      width: 208px; box-sizing: border-box;
+      border: 1px solid var(--border); border-left: 4px solid var(--psc-slate);
+      border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow);
+      padding: 0 0 2px; transition: box-shadow 0.12s ease, opacity 0.18s ease;
+    }
+    .proactive-chart .node:hover { box-shadow: var(--shadow-lg); }
+    .proactive-chart .node .title {
+      background: transparent; color: var(--text); font-size: 14px; font-weight: 700;
+      text-align: left; padding: 10px 12px 1px; height: auto; line-height: 1.25;
+      white-space: normal; border-radius: 0; width: 100%;
+    }
+    .proactive-chart .node .content {
+      border: none; color: var(--text-secondary); font-size: 12px; text-align: left;
+      padding: 0 12px; height: auto; line-height: 1.3; white-space: normal;
+    }
+    .node-sub { font-size: 11px; color: var(--psc-muted); padding: 4px 12px 0; line-height: 1.3; }
+    .node-badge {
+      display: inline-block; margin: 7px 12px 8px; font-size: 10px; font-weight: 700;
+      color: #fff; background: var(--psc-amber); padding: 2px 8px; border-radius: 999px; letter-spacing: 0.03em;
+    }
+
+    /* division accents */
+    .proactive-chart .node.division-csuite { border-left-color: var(--psc-red); }
+    .proactive-chart .node.division-warehousing { border-left-color: var(--psc-charcoal); }
+    .proactive-chart .node.division-freight { border-left-color: var(--psc-slate); }
+    .proactive-chart .node.division-specialized { border-left-color: var(--psc-amber); }
+    .proactive-chart .node.division-support { border-left-color: var(--psc-teal); }
+    .proactive-chart .node.is-ceo { box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.28), var(--shadow); }
+
+    /* filter dim + search highlight */
+    .proactive-chart .node.dimmed { opacity: 0.25; }
+    .proactive-chart .node.search-hit { outline: 3px solid var(--hi); outline-offset: 1px; opacity: 1 !important; }
 
     /* ---- Terminated sidebar ---- */
-    .sidebar {
-      flex: 0 0 300px; width: 300px; height: 100%;
-      border-left: 1px solid var(--border); background: var(--card);
-      display: flex; flex-direction: column; overflow: hidden;
-    }
+    .sidebar { flex: 0 0 300px; width: 300px; height: 100%; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; overflow: hidden; }
     .sidebar.hidden { display: none; }
-    .sidebar-header {
-      padding: 14px 16px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .sidebar-title {
-      font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--psc-muted);
-    }
+    .sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .sidebar-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--psc-muted); }
     .sidebar-list { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
     .sidebar-empty { padding: 24px 16px; text-align: center; color: var(--text-secondary); font-size: 13px; }
-    .term-card {
-      border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 10px 12px; cursor: pointer; background: var(--bg);
-      transition: border-color 0.12s ease, background 0.12s ease;
-    }
+    .term-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; background: var(--bg); transition: border-color 0.12s ease, background 0.12s ease; }
     .term-card:hover { border-color: var(--psc-red); background: #fff; }
     .term-card .tc-name { font-size: 13px; font-weight: 600; color: var(--psc-muted); text-decoration: line-through; }
     .term-card .tc-role { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
     .term-card .tc-restore { font-size: 11px; font-weight: 700; color: var(--psc-red); margin-top: 6px; }
 
     /* ---- Modal ---- */
-    .overlay {
-      position: fixed; inset: 0; background: rgba(17, 24, 39, 0.45);
-      display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100;
-    }
+    .overlay { position: fixed; inset: 0; background: rgba(17,24,39,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
     .overlay.open { display: flex; }
-    .modal {
-      background: var(--card); border-radius: 12px; width: 100%; max-width: 440px;
-      box-shadow: var(--shadow-lg); overflow: hidden;
-    }
+    .modal { background: var(--card); border-radius: 12px; width: 100%; max-width: 460px; box-shadow: var(--shadow-lg); overflow: hidden; }
     .modal-header { padding: 16px 22px; border-bottom: 1px solid var(--border); }
     .modal-title { font-size: 16px; font-weight: 700; margin: 0; }
     .modal-meta { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
     .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label {
-      font-size: 11px; font-weight: 600; color: var(--text-secondary);
-      text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .field input, .field select {
-      font: inherit; font-size: 14px; padding: 9px 11px;
-      border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text);
-    }
-    .field input:focus, .field select:focus {
-      outline: none; border-color: var(--psc-red); box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.12);
-    }
+    .field label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .field input, .field select { font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--psc-red); box-shadow: 0 0 0 3px rgba(211,47,47,0.12); }
     .field input.invalid { border-color: var(--psc-red); }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .modal-footer {
-      padding: 14px 22px; border-top: 1px solid var(--border);
-      display: flex; align-items: center; gap: 8px;
-    }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
     .footer-spacer { flex: 1 1 auto; }
 
-    /* ---- Load-error banner ---- */
-    .banner {
-      display: none; position: absolute; inset: 0; z-index: 5;
-      align-items: center; justify-content: center; padding: 24px; background: var(--bg);
-    }
+    /* ---- Load banner ---- */
+    .banner { display: none; position: absolute; inset: 0; z-index: 30; align-items: center; justify-content: center; padding: 24px; background: var(--bg); }
     .banner.show { display: flex; }
-    .banner-box {
-      max-width: 520px; background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 28px 30px; box-shadow: var(--shadow); text-align: center;
-    }
+    .banner-box { max-width: 540px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px 30px; box-shadow: var(--shadow); text-align: center; }
     .banner-box h2 { margin: 0 0 8px; font-size: 18px; }
     .banner-box p { margin: 0 0 14px; color: var(--text-secondary); font-size: 14px; }
-    .banner-box code {
-      display: inline-block; background: var(--bg); border: 1px solid var(--border);
-      border-radius: 6px; padding: 3px 8px; font-size: 13px; color: var(--text);
-    }
-
-    /* ---- OrgChart node text helpers (matched to brand palette) ---- */
-    .oc-name { font-size: 15px; font-weight: 700; fill: #111827; }
-    .oc-title { font-size: 12px; fill: #6B7280; }
-    .oc-sub { font-size: 11px; fill: #9CA3AF; }
-    .oc-badge { font-size: 11px; font-weight: 700; fill: #D32F2F; }
+    .banner-box code { display: inline-block; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 13px; color: var(--text); }
 
     @media print {
-      .app-header, .sidebar, .overlay { display: none !important; }
+      .app-header, .filter-bar, .sidebar, .overlay { display: none !important; }
       body { height: auto; overflow: visible; }
       .main { height: auto; }
+      #chart-container { overflow: visible; height: auto; }
     }
   </style>
 </head>
@@ -199,8 +200,9 @@
     <div class="header-mid">
       <div class="search-wrap">
         <span class="search-icon">&#9906;</span>
-        <input type="text" id="search" class="search-input" placeholder="Search by name…" autocomplete="off">
+        <input type="text" id="search" class="search-input" placeholder="Search name, title, dept…" autocomplete="off">
         <span class="search-count" id="search-count"></span>
+        <button class="search-clear" id="search-clear" type="button" title="Clear search" aria-label="Clear search">&times;</button>
       </div>
     </div>
 
@@ -214,8 +216,18 @@
     </div>
   </header>
 
+  <div class="filter-bar">
+    <span class="filter-label">Division</span>
+    <button class="filter-btn active" data-filter="all" type="button">All</button>
+    <button class="filter-btn" data-filter="C-Suite" type="button"><span class="dot csuite"></span>C-Suite</button>
+    <button class="filter-btn" data-filter="Warehousing" type="button"><span class="dot warehousing"></span>Warehousing</button>
+    <button class="filter-btn" data-filter="Freight" type="button"><span class="dot freight"></span>Freight</button>
+    <button class="filter-btn" data-filter="Specialized" type="button"><span class="dot specialized"></span>Specialized</button>
+    <button class="filter-btn" data-filter="Support" type="button"><span class="dot support"></span>Support</button>
+  </div>
+
   <div class="main">
-    <div id="tree"></div>
+    <div id="chart-container"></div>
 
     <aside class="sidebar hidden" id="sidebar">
       <div class="sidebar-header">
@@ -227,7 +239,7 @@
 
     <div class="banner" id="banner">
       <div class="banner-box">
-        <h2>Couldn't auto-load employee data</h2>
+        <h2 id="banner-title">Couldn't auto-load employee data</h2>
         <p id="banner-msg">
           Browsers block reading local files when a page is opened directly
           (<code>file://</code>). Serve the folder over HTTP, then reload:
@@ -265,14 +277,20 @@
             <input type="text" id="f-location" autocomplete="off" placeholder="e.g. Ontario">
           </div>
         </div>
-        <div class="field" id="f-manager-wrap">
-          <label for="f-manager">Reports to</label>
-          <select id="f-manager"></select>
+        <div class="row2">
+          <div class="field">
+            <label for="f-division">Division</label>
+            <select id="f-division"></select>
+          </div>
+          <div class="field" id="f-manager-wrap">
+            <label for="f-manager">Reports to</label>
+            <select id="f-manager"></select>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-danger" id="modal-delete" type="button">Delete</button>
-        <button class="btn btn-danger" id="modal-terminate" type="button">Terminate</button>
+        <button class="btn" id="modal-delete" type="button">Delete</button>
+        <button class="btn" id="modal-terminate" type="button">Terminate</button>
         <span class="footer-spacer"></span>
         <button class="btn" id="modal-cancel" type="button">Cancel</button>
         <button class="btn btn-primary" id="modal-save" type="button">Save</button>
@@ -288,26 +306,50 @@
     // ---------- Constants ----------
     var KEY = "proactive-restructure-state-v2";
     var KEY_ORIG = "proactive-restructure-original-v2";
+    var KEY_FILTER = "proactive-restructure-filter-v2";
     var DATA_URL = "employees.json";
+
+    var DIVISIONS = [
+      { key: "C-Suite", slug: "csuite" },
+      { key: "Warehousing", slug: "warehousing" },
+      { key: "Freight", slug: "freight" },
+      { key: "Specialized", slug: "specialized" },
+      { key: "Support", slug: "support" }
+    ];
+    var DIV_KEYS = DIVISIONS.map(function (d) { return d.key; });
+    function divSlug(key) {
+      for (var i = 0; i < DIVISIONS.length; i++) { if (DIVISIONS[i].key === key) { return DIVISIONS[i].slug; } }
+      return "support";
+    }
 
     // ---------- State ----------
     var META = { app: "proactive-restructure", version: 2, schema: "org-chart", source: "", ceo_id: "" };
-    var employees = [];   // [{id,pid,name,title,dept,location,status,terminated}]
+    var employees = [];
     var ceoId = "";
-    var chart = null;
+    var oc = null;
+    var currentFilter = "all";
+    var currentSearch = "";
 
     function byId(id) {
       id = String(id);
-      for (var i = 0; i < employees.length; i++) {
-        if (employees[i].id === id) { return employees[i]; }
-      }
+      for (var i = 0; i < employees.length; i++) { if (employees[i].id === id) { return employees[i]; } }
       return null;
     }
 
+    // ---------- Division derivation ----------
+    function deriveDivision(dept, title) {
+      var d = (dept || "").toUpperCase();
+      var t = title || "";
+      if (d === "OWNERS" || /chief|\bceo\b|\bcoo\b|\bcfo\b|\bcco\b|president/i.test(t)) { return "C-Suite"; }
+      if (d.indexOf("SPE") === 0) { return "Specialized"; }
+      if (/WHS|WAR|WPL/.test(d) || d === "NLFPRO") { return "Warehousing"; }
+      if (/FRT|TRA|HOU/.test(d) || d === "ATLOPS") { return "Freight"; }
+      return "Support"; // ACC, ITD, HUMRES, BOOKKP, OFF, and everything else
+    }
+
     // ---------- Normalization ----------
-    // Source ids are NOT unique (46 collisions in the ADP dump). Make them
-    // unique for the chart: the first occurrence keeps its id, later ones get
-    // an "-N" suffix. pids still resolve because the first occurrence is kept.
+    // Source ids are NOT unique (46 collisions). Uniquify so each node has a
+    // stable key; the first occurrence keeps its id, later ones get an "-N" suffix.
     function normalize(root) {
       var list = Array.isArray(root) ? root : (root && root.employees) || [];
       if (root && !Array.isArray(root)) {
@@ -318,42 +360,35 @@
         META.ceo_id = root.ceo_id || META.ceo_id;
       }
       var used = {};
-      var out = list.map(function (e) {
+      return list.map(function (e) {
         e = e || {};
         var orig = e.id == null ? "" : String(e.id);
         var id = orig;
-        if (used[id]) {
-          var n = 2;
-          while (used[orig + "-" + n]) { n++; }
-          id = orig + "-" + n;
-        }
+        if (used[id]) { var n = 2; while (used[orig + "-" + n]) { n++; } id = orig + "-" + n; }
         used[id] = true;
+        var dept = String(e.dept == null ? "" : e.dept).trim();
+        var title = String(e.title == null ? "" : e.title).trim();
+        var division = DIV_KEYS.indexOf(e.division) !== -1 ? e.division : deriveDivision(dept, title);
         return {
           id: id,
           pid: e.pid == null ? "" : String(e.pid),
           name: String(e.name == null ? "" : e.name).trim() || "Unnamed",
-          title: String(e.title == null ? "" : e.title).trim(),
-          dept: String(e.dept == null ? "" : e.dept).trim(),
+          title: title, dept: dept,
           location: String(e.location == null ? "" : e.location).trim(),
           status: e.status === "Leave" ? "Leave" : "Active",
-          terminated: e.terminated === true
+          terminated: e.terminated === true,
+          division: division
         };
       });
-      return out;
     }
 
     function computeCeoId() {
       if (META.ceo_id && byId(META.ceo_id)) { return META.ceo_id; }
-      for (var i = 0; i < employees.length; i++) {
-        if (!employees[i].pid) { return employees[i].id; }
-      }
+      for (var i = 0; i < employees.length; i++) { if (!employees[i].pid) { return employees[i].id; } }
       return employees.length ? employees[0].id : "";
     }
 
-    function applyData(list) {
-      employees = list;
-      ceoId = computeCeoId();
-    }
+    function applyData(list) { employees = list; ceoId = computeCeoId(); }
 
     // ---------- Persistence ----------
     function wrap() {
@@ -363,105 +398,111 @@
         ceo_id: ceoId, employees: employees
       };
     }
-    function save() {
-      try { localStorage.setItem(KEY, JSON.stringify(wrap())); }
-      catch (err) { console.warn("Could not save state:", err); }
-    }
-    function saveOriginal() {
-      try { localStorage.setItem(KEY_ORIG, JSON.stringify(wrap())); }
-      catch (err) { console.warn("Could not save original snapshot:", err); }
-    }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(wrap())); } catch (e) { console.warn("save failed", e); } }
+    function saveOriginal() { try { localStorage.setItem(KEY_ORIG, JSON.stringify(wrap())); } catch (e) { console.warn("save original failed", e); } }
+    function saveFilter() { try { localStorage.setItem(KEY_FILTER, currentFilter); } catch (e) { /* ignore */ } }
 
-    // ---------- Chart node mapping ----------
-    function toNode(e) {
-      var sub = e.dept + (e.dept && e.location ? "  ·  " : "") + e.location;
-      var node = {
-        id: e.id,
-        pid: e.pid ? e.pid : null,
-        name: e.name,
-        title: e.title,
-        sub: sub,
-        badge: e.status === "Leave" ? "●  On Leave" : ""
-      };
-      if (e.id === ceoId || /chief|owner|president/i.test(e.title) || e.dept === "OWNERS") {
-        node.tags = ["csuite"];
-      }
-      return node;
-    }
-
-    // Visible = not terminated. Re-parent any node whose manager is hidden/missing
-    // up to the CEO so the chart never drops people.
-    function buildVisibleNodes() {
-      var visible = {};
-      employees.forEach(function (e) { if (!e.terminated) { visible[e.id] = true; } });
-      return employees.filter(function (e) { return !e.terminated; }).map(function (e) {
-        var node = toNode(e);
-        if (node.pid && !visible[node.pid]) { node.pid = (e.id === ceoId) ? null : ceoId; }
-        return node;
+    // ---------- Tree building ----------
+    function buildTree() {
+      var visible = employees.filter(function (e) { return !e.terminated; });
+      var map = {};
+      visible.forEach(function (e) {
+        map[e.id] = {
+          id: e.id, name: e.name, title: e.title, dept: e.dept,
+          location: e.location, status: e.status, division: e.division, children: []
+        };
       });
+      var root = map[ceoId] || null;
+      visible.forEach(function (e) {
+        if (e.id === ceoId) { return; }
+        var node = map[e.id];
+        var parent = (e.pid && map[e.pid]) ? map[e.pid] : root;
+        if (parent && parent !== node) { parent.children.push(node); }
+      });
+      if (!root) {
+        root = { id: "__root__", name: "Organization", title: "", dept: "", location: "", division: "Support", children: [] };
+        visible.forEach(function (e) { if (!e.pid || !map[e.pid]) { root.children.push(map[e.id]); } });
+      }
+      (function prune(node) {
+        if (node.children && node.children.length) { node.children.forEach(prune); }
+        else { delete node.children; }
+      })(root);
+      return root;
     }
 
     // ---------- Chart ----------
-    function setupTemplates() {
-      // Clone a known base template (name availability varies by edition/version).
-      var base = OrgChart.templates.ana || OrgChart.templates.ula ||
-                 OrgChart.templates.olivia || OrgChart.templates.base;
-      OrgChart.templates.proactive = Object.assign({}, base);
-      OrgChart.templates.proactive.size = [280, 104];
-      OrgChart.templates.proactive.node =
-        '<rect x="0" y="0" width="280" height="104" rx="8" ry="8" fill="#FFFFFF" stroke="#6B7280" stroke-width="1"></rect>';
-      OrgChart.templates.proactive.field_0 = '<text class="oc-name" x="18" y="34">{val}</text>';
-      OrgChart.templates.proactive.field_1 = '<text class="oc-title" x="18" y="55">{val}</text>';
-      OrgChart.templates.proactive.field_2 = '<text class="oc-sub" x="18" y="78">{val}</text>';
-      OrgChart.templates.proactive.field_3 = '<text class="oc-badge" x="18" y="96">{val}</text>';
-
-      OrgChart.templates.proactive_csuite = Object.assign({}, OrgChart.templates.proactive);
-      OrgChart.templates.proactive_csuite.node =
-        '<rect x="0" y="0" width="280" height="104" rx="8" ry="8" fill="#FFFFFF" stroke="#D32F2F" stroke-width="2"></rect>' +
-        '<rect x="0" y="0" width="280" height="6" rx="3" ry="3" fill="#D32F2F"></rect>';
+    function createNode($node, data) {
+      $node.attr("data-emp-id", data.id);
+      $node.addClass("division-" + divSlug(data.division));
+      if (data.id === ceoId) { $node.addClass("is-ceo"); }
+      var sub = (data.dept || "") + (data.dept && data.location ? "  ·  " : "") + (data.location || "");
+      if (sub) { $node.append($('<div class="node-sub"></div>').text(sub)); }
+      if (data.status === "Leave") { $node.append($('<div class="node-badge"></div>').text("On Leave")); }
     }
 
-    function initChart() {
-      if (typeof OrgChart === "undefined" || window.__ORGCHART_FAILED__) {
-        showBanner("Org chart library failed to load. This app needs an internet connection the first time so it can fetch the OrgChart library from the CDN.");
-        return;
+    function renderChart() {
+      var $c = $("#chart-container");
+      $c.empty();
+      oc = $c.orgchart({
+        data: buildTree(),
+        nodeId: "id",
+        nodeContent: "title",
+        draggable: true,
+        pan: true,
+        zoom: true,
+        exportButton: true,
+        exportFilename: "proactive-org",
+        exportFileextension: "pdf",
+        chartClass: "proactive-chart",
+        createNode: createNode
+      });
+      applyFilter();
+      if (currentSearch) { doSearch(currentSearch); }
+    }
+
+    function rebuild() { renderChart(); renderSidebar(); }
+
+    // ---------- Filter ----------
+    function applyFilter() {
+      var nodes = document.querySelectorAll("#chart-container .node");
+      var slug = currentFilter === "all" ? null : "division-" + divSlug(currentFilter);
+      for (var i = 0; i < nodes.length; i++) {
+        if (!slug || nodes[i].classList.contains(slug)) { nodes[i].classList.remove("dimmed"); }
+        else { nodes[i].classList.add("dimmed"); }
       }
-      setupTemplates();
-      chart = new OrgChart(document.getElementById("tree"), {
-        template: "proactive",
-        enableDragDrop: true,
-        nodeMouseClick: OrgChart.action ? OrgChart.action.none : "none",
-        mouseScrool: OrgChart.action ? OrgChart.action.zoom : undefined,
-        scaleInitial: OrgChart.match ? OrgChart.match.boundary : undefined,
-        nodeBinding: { field_0: "name", field_1: "title", field_2: "sub", field_3: "badge" },
-        searchFields: ["name", "title"],
-        tags: { csuite: { template: "proactive_csuite" } },
-        nodes: buildVisibleNodes()
-      });
-
-      chart.on("drop", function (sender, a, b) {
-        var dragId, dropId;
-        if (a && typeof a === "object") { dragId = a.dragId != null ? a.dragId : a.id; dropId = a.dropId; }
-        else { dragId = a; dropId = b; }
-        if (dragId == null || dropId == null) { return; }
-        var emp = byId(dragId);
-        if (emp) { emp.pid = String(dropId); save(); }
-        // allow OrgChart's own reparent + redraw to proceed
-      });
-
-      chart.on("click", function (sender, args) {
-        var id = args && args.node ? args.node.id : (args && args.id);
-        if (id != null) { openEdit(String(id)); }
-        return false;
-      });
-
-      renderSidebar();
+      var btns = document.querySelectorAll(".filter-btn");
+      for (var j = 0; j < btns.length; j++) { btns[j].classList.toggle("active", btns[j].getAttribute("data-filter") === currentFilter); }
     }
+    function setFilter(key) { currentFilter = key; saveFilter(); applyFilter(); }
 
-    function rebuild() {
-      if (chart) { chart.load(buildVisibleNodes()); }
-      renderSidebar();
+    // ---------- Search ----------
+    function fuzzy(q, text) {
+      q = q.toLowerCase(); text = text.toLowerCase();
+      if (text.indexOf(q) !== -1) { return true; }
+      var i = 0;
+      for (var j = 0; j < text.length && i < q.length; j++) { if (text[j] === q[i]) { i++; } }
+      return i === q.length;
     }
+    function doSearch(value) {
+      currentSearch = value;
+      var q = value.trim();
+      var nodes = document.querySelectorAll("#chart-container .node");
+      var first = null, count = 0;
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        n.classList.remove("search-hit");
+        if (!q) { continue; }
+        var emp = byId(n.getAttribute("data-emp-id"));
+        if (!emp) { continue; }
+        if (fuzzy(q, emp.name + " " + (emp.title || "") + " " + (emp.dept || ""))) {
+          n.classList.add("search-hit"); count++; if (!first) { first = n; }
+        }
+      }
+      var countEl = document.getElementById("search-count");
+      countEl.textContent = q ? (count ? count + (count > 1 ? " matches" : " match") : "no match") : "";
+      if (first) { try { first.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" }); } catch (e) { /* ignore */ } }
+    }
+    function clearSearch() { document.getElementById("search").value = ""; doSearch(""); }
 
     // ---------- Actions ----------
     function genId() {
@@ -469,37 +510,27 @@
       while (byId(id)) { id += "x"; }
       return id;
     }
-
     function terminate(id) {
       var emp = byId(id);
       if (!emp || emp.terminated) { return; }
-      // re-home direct reports to this person's manager
       employees.forEach(function (c) { if (c.pid === emp.id) { c.pid = emp.pid; } });
-      emp.terminated = true;
-      save();
-      rebuild();
+      emp.terminated = true; save(); rebuild();
     }
-
     function unterminate(id) {
       var emp = byId(id);
       if (!emp) { return; }
       var mgr = emp.pid ? byId(emp.pid) : null;
       if (!mgr || mgr.terminated) { emp.pid = (emp.id === ceoId) ? "" : ceoId; }
-      emp.terminated = false;
-      save();
-      rebuild();
+      emp.terminated = false; save(); rebuild();
     }
-
     function removeEmployee(id) {
       var emp = byId(id);
       if (!emp) { return; }
       employees.forEach(function (c) { if (c.pid === emp.id) { c.pid = emp.pid; } });
       employees = employees.filter(function (e) { return e.id !== id; });
       if (id === ceoId) { ceoId = computeCeoId(); }
-      save();
-      rebuild();
+      save(); rebuild();
     }
-
     function exportJSON() {
       var blob = new Blob([JSON.stringify(wrap(), null, 2)], { type: "application/json" });
       var url = URL.createObjectURL(blob);
@@ -507,57 +538,33 @@
       var stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       var a = document.createElement("a");
       a.href = url; a.download = "proactive-org-" + stamp + ".json";
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
-
     function importJSON(file) {
       var reader = new FileReader();
       reader.onload = function () {
         var data;
         try { data = JSON.parse(reader.result); }
-        catch (err) { alert("Could not read that file — it is not valid JSON."); return; }
+        catch (e) { alert("Could not read that file — it is not valid JSON."); return; }
         var list = Array.isArray(data) ? data : (data && data.employees);
         if (!Array.isArray(list)) { alert('That file does not look like an org export (no "employees" array).'); return; }
-        applyData(normalize(data));
-        save();
-        hideBanner();
-        rebuild();
+        applyData(normalize(data)); save(); hideBanner(); rebuild();
       };
       reader.onerror = function () { alert("Could not read that file."); };
       reader.readAsText(file);
     }
-
     function resetToOriginal() {
       if (!confirm("Reset to the original org chart? This discards all current changes.")) { return; }
       var orig = null;
       try { orig = localStorage.getItem(KEY_ORIG); } catch (e) { /* ignore */ }
-      if (orig) {
-        applyData(normalize(JSON.parse(orig)));
-        save();
-        rebuild();
-        return;
-      }
+      if (orig) { applyData(normalize(JSON.parse(orig))); save(); rebuild(); return; }
       fetch(DATA_URL).then(function (r) { if (!r.ok) { throw new Error("HTTP " + r.status); } return r.json(); })
         .then(function (root) { applyData(normalize(root)); saveOriginal(); save(); rebuild(); })
-        .catch(function () { alert("Couldn't reach employees.json to reset. Run the app over a local server, or re-import the original file."); });
+        .catch(function () { alert("Couldn't reach employees.json to reset. Run over a local server, or re-import the original file."); });
     }
-
     function printPDF() {
-      if (chart && typeof chart.exportToPDF === "function") {
-        chart.exportToPDF({ format: "A4", landscape: true });
-      } else {
-        window.print();
-      }
-    }
-
-    function doSearch(value) {
-      var countEl = document.getElementById("search-count");
-      value = value.trim();
-      if (!value || !chart) { countEl.textContent = ""; return; }
-      var matches = chart.search(value, ["name"]) || [];
-      countEl.textContent = matches.length ? (matches.length + " match" + (matches.length > 1 ? "es" : "")) : "no match";
-      if (matches.length) { chart.center(matches[0].id); }
+      if (oc && typeof oc.export === "function") { oc.export("proactive-org", "pdf"); }
+      else { window.print(); }
     }
 
     // ---------- Modal ----------
@@ -566,74 +573,75 @@
     var fTitle = document.getElementById("f-title");
     var fDept = document.getElementById("f-dept");
     var fLocation = document.getElementById("f-location");
+    var fDivision = document.getElementById("f-division");
     var fManagerWrap = document.getElementById("f-manager-wrap");
     var fManager = document.getElementById("f-manager");
     var modalTitle = document.getElementById("modal-title");
     var modalMeta = document.getElementById("modal-meta");
     var btnDelete = document.getElementById("modal-delete");
     var btnTerminate = document.getElementById("modal-terminate");
-    var modalMode = null;
-    var modalId = null;
+    var modalMode = null, modalId = null, divisionTouched = false;
 
+    function populateDivisions(selected) {
+      fDivision.textContent = "";
+      DIVISIONS.forEach(function (d) {
+        var o = document.createElement("option");
+        o.value = d.key; o.textContent = d.key;
+        fDivision.appendChild(o);
+      });
+      if (selected) { fDivision.value = selected; }
+    }
     function populateManagers(selectedId) {
       fManager.textContent = "";
       employees.filter(function (e) { return !e.terminated; })
-        .slice()
-        .sort(function (a, b) { return a.name.localeCompare(b.name); })
+        .slice().sort(function (a, b) { return a.name.localeCompare(b.name); })
         .forEach(function (e) {
           var o = document.createElement("option");
-          o.value = e.id;
-          o.textContent = e.name + (e.title ? " — " + e.title : "");
+          o.value = e.id; o.textContent = e.name + (e.title ? " — " + e.title : "");
           fManager.appendChild(o);
         });
       if (selectedId) { fManager.value = selectedId; }
     }
-
-    function openModal() {
-      overlay.classList.add("open");
-      fName.classList.remove("invalid");
-      window.setTimeout(function () { fName.focus(); }, 0);
-    }
+    function openModal() { overlay.classList.add("open"); fName.classList.remove("invalid"); window.setTimeout(function () { fName.focus(); }, 0); }
     function closeModal() { overlay.classList.remove("open"); modalMode = null; modalId = null; }
 
     function openAdd() {
-      modalMode = "add"; modalId = null;
-      modalTitle.textContent = "Add Employee";
-      modalMeta.textContent = "";
+      modalMode = "add"; modalId = null; divisionTouched = false;
+      modalTitle.textContent = "Add Employee"; modalMeta.textContent = "";
       fName.value = ""; fTitle.value = ""; fDept.value = ""; fLocation.value = "";
+      populateDivisions(deriveDivision("", ""));
       populateManagers(ceoId);
       fManagerWrap.style.display = "";
       btnDelete.style.display = "none";
       btnTerminate.style.display = "none";
       openModal();
     }
-
     function openEdit(id) {
       var emp = byId(id);
       if (!emp) { return; }
-      modalMode = "edit"; modalId = id;
+      modalMode = "edit"; modalId = id; divisionTouched = true;
       modalTitle.textContent = "Edit Employee";
       modalMeta.textContent = "ID " + emp.id + "  ·  " + emp.status + (emp.terminated ? "  ·  Terminated" : "");
       fName.value = emp.name; fTitle.value = emp.title; fDept.value = emp.dept; fLocation.value = emp.location;
+      populateDivisions(emp.division);
       fManagerWrap.style.display = "none";
       btnDelete.style.display = "";
       btnTerminate.style.display = emp.terminated ? "none" : "";
       openModal();
     }
-
     function saveModal() {
       var name = fName.value.trim();
       if (!name) { fName.classList.add("invalid"); fName.focus(); return; }
       var title = fTitle.value.trim(), dept = fDept.value.trim(), location = fLocation.value.trim();
+      var division = fDivision.value;
       if (modalMode === "add") {
         employees.push({
-          id: genId(), pid: fManager.value || ceoId,
-          name: name, title: title, dept: dept, location: location,
-          status: "Active", terminated: false
+          id: genId(), pid: fManager.value || ceoId, name: name, title: title,
+          dept: dept, location: location, status: "Active", terminated: false, division: division
         });
       } else if (modalMode === "edit") {
         var emp = byId(modalId);
-        if (emp) { emp.name = name; emp.title = title; emp.dept = dept; emp.location = location; }
+        if (emp) { emp.name = name; emp.title = title; emp.dept = dept; emp.location = location; emp.division = division; }
       }
       closeModal(); save(); rebuild();
     }
@@ -646,15 +654,12 @@
       list.textContent = "";
       if (!term.length) {
         var empty = document.createElement("div");
-        empty.className = "sidebar-empty";
-        empty.textContent = "No terminated employees.";
-        list.appendChild(empty);
-        return;
+        empty.className = "sidebar-empty"; empty.textContent = "No terminated employees.";
+        list.appendChild(empty); return;
       }
       term.sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (e) {
         var card = document.createElement("div");
-        card.className = "term-card";
-        card.title = "Click to reinstate";
+        card.className = "term-card"; card.title = "Click to reinstate";
         var n = document.createElement("div"); n.className = "tc-name"; n.textContent = e.name;
         var r = document.createElement("div"); r.className = "tc-role"; r.textContent = e.title || "—";
         var a = document.createElement("div"); a.className = "tc-restore"; a.textContent = "↩ Reinstate";
@@ -663,11 +668,11 @@
         list.appendChild(card);
       });
     }
-
     function toggleSidebar() { document.getElementById("sidebar").classList.toggle("hidden"); }
 
-    // ---------- Load-error banner ----------
-    function showBanner(msg) {
+    // ---------- Banner ----------
+    function showBanner(msg, title) {
+      if (title) { document.getElementById("banner-title").textContent = title; }
       if (msg) { document.getElementById("banner-msg").textContent = msg; }
       document.getElementById("banner").classList.add("show");
     }
@@ -687,6 +692,10 @@
       importFile.value = "";
     });
 
+    document.querySelectorAll(".filter-btn").forEach(function (b) {
+      b.addEventListener("click", function () { setFilter(b.getAttribute("data-filter")); });
+    });
+
     document.getElementById("modal-cancel").addEventListener("click", closeModal);
     document.getElementById("modal-save").addEventListener("click", saveModal);
     btnTerminate.addEventListener("click", function () { if (modalId) { var id = modalId; closeModal(); terminate(id); } });
@@ -702,28 +711,63 @@
       inp.addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); saveModal(); } });
     });
     fName.addEventListener("input", function () { fName.classList.remove("invalid"); });
-    document.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape" && overlay.classList.contains("open")) { closeModal(); }
+    fDivision.addEventListener("change", function () { divisionTouched = true; });
+    // In add mode, auto-suggest division from dept/title until the user picks one.
+    [fDept, fTitle].forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        if (modalMode === "add" && !divisionTouched) { fDivision.value = deriveDivision(fDept.value, fTitle.value); }
+      });
     });
+    document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && overlay.classList.contains("open")) { closeModal(); } });
 
     var searchTimer = null;
     document.getElementById("search").addEventListener("input", function (ev) {
       var v = ev.target.value;
       window.clearTimeout(searchTimer);
-      searchTimer = window.setTimeout(function () { doSearch(v); }, 200);
+      searchTimer = window.setTimeout(function () { doSearch(v); }, 180);
     });
+    document.getElementById("search-clear").addEventListener("click", clearSearch);
+
+    // Chart-level delegated handlers (bound once; survive re-renders).
+    $("#chart-container")
+      .on("nodedrop.orgchart nodedropped.orgchart", function (event) {
+        var dragged = event.draggedNode ? $(event.draggedNode) : null;
+        var drop = event.dropZone ? $(event.dropZone) : null;
+        if (!dragged || !drop || !dragged.length || !drop.length) { return; }
+        var dragId = dragged.attr("data-emp-id"), dropId = drop.attr("data-emp-id");
+        if (!dragId || !dropId || dragId === dropId) { return; }
+        var emp = byId(dragId);
+        if (emp) { emp.pid = String(dropId); save(); renderSidebar(); }
+      })
+      .on("click", ".node", function (e) {
+        if ($(e.target).closest(".edge, .toggleBtn, .spinner").length) { return; }
+        var id = $(this).attr("data-emp-id");
+        if (id) { openEdit(id); }
+      });
 
     // ---------- Boot ----------
+    function loadFilter() {
+      try { var f = localStorage.getItem(KEY_FILTER); if (f) { currentFilter = f; } } catch (e) { /* ignore */ }
+    }
+    function start() {
+      if (typeof window.jQuery === "undefined" || !$.fn || typeof $.fn.orgchart === "undefined") {
+        showBanner("The org chart library (or jQuery) failed to load from the CDN. This app needs internet the first time. Check your connection and reload.", "Library failed to load");
+        return;
+      }
+      renderChart();
+      renderSidebar();
+    }
     function boot() {
+      loadFilter();
       var saved = null;
       try { saved = localStorage.getItem(KEY); } catch (e) { /* ignore */ }
       if (saved) {
-        try { applyData(normalize(JSON.parse(saved))); initChart(); return; }
+        try { applyData(normalize(JSON.parse(saved))); start(); return; }
         catch (e) { console.warn("Saved state unreadable, refetching:", e); }
       }
       fetch(DATA_URL)
         .then(function (r) { if (!r.ok) { throw new Error("HTTP " + r.status); } return r.json(); })
-        .then(function (root) { applyData(normalize(root)); saveOriginal(); save(); initChart(); })
+        .then(function (root) { applyData(normalize(root)); saveOriginal(); save(); start(); })
         .catch(function (err) { console.warn("Auto-load failed:", err); showBanner(); });
     }
 
