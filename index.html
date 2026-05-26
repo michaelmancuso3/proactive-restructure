@@ -14,31 +14,18 @@
 
   <style>
     :root {
-      --psc-red: #D32F2F;
-      --psc-red-dark: #B71C1C;
-      --psc-charcoal: #1F2937;
-      --psc-slate: #6B7280;
-      --psc-teal: #0F766E;
-      --psc-muted: #9CA3AF;
-      --bg: #F9FAFB;
-      --card: #FFFFFF;
-      --border: #E5E7EB;
-      --text: #111827;
-      --text-secondary: #6B7280;
-      --hi: #FACC15;
-      --radius: 8px;
-      --shadow: 0 1px 2px rgba(17,24,39,0.06), 0 1px 3px rgba(17,24,39,0.08);
+      --psc-red: #D32F2F; --psc-red-dark: #B71C1C; --psc-charcoal: #1F2937;
+      --psc-slate: #6B7280; --psc-teal: #0F766E; --psc-muted: #9CA3AF;
+      --gold: #F59E0B; --bg: #F9FAFB; --card: #FFFFFF; --border: #E5E7EB;
+      --text: #111827; --text-secondary: #6B7280; --hi: #FACC15;
+      --radius: 8px; --shadow: 0 1px 2px rgba(17,24,39,0.06), 0 1px 3px rgba(17,24,39,0.08);
       --shadow-lg: 0 20px 40px rgba(17,24,39,0.25);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg); color: var(--text); line-height: 1.45;
-      display: flex; flex-direction: column; height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.45; display: flex; flex-direction: column; height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
+    body.move-mode #chart-container { cursor: crosshair; }
 
-    /* Header */
     .app-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding: 12px 22px; border-bottom: 1px solid var(--border); background: var(--card); flex: 0 0 auto; z-index: 20; }
     .titles { display: flex; flex-direction: column; }
     .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--psc-red); margin: 0; }
@@ -58,49 +45,45 @@
     .btn:focus-visible { outline: 2px solid var(--psc-red); outline-offset: 2px; }
     .btn-primary { background: var(--psc-red); border-color: var(--psc-red); color: #fff; }
     .btn-primary:hover { background: var(--psc-red-dark); border-color: var(--psc-red-dark); color: #fff; }
+    .btn-active { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .btn-active:hover { background: #c77f06; border-color: #c77f06; color: #fff; }
 
-    /* Filter bar */
     .filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 22px; border-bottom: 1px solid var(--border); background: var(--card); flex: 0 0 auto; z-index: 15; }
     .filter-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary); margin-right: 4px; }
     .filter-btn { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: border-color 0.12s, background 0.12s, color 0.12s; }
     .filter-btn:hover { border-color: var(--psc-red); }
     .filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
     .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-    .dot.csuite { background: var(--psc-red); }
-    .dot.warehousing { background: var(--psc-charcoal); }
-    .dot.freight { background: var(--psc-slate); }
-    .dot.support { background: var(--psc-teal); }
+    .dot.csuite { background: var(--psc-red); } .dot.warehousing { background: var(--psc-charcoal); }
+    .dot.freight { background: var(--psc-slate); } .dot.support { background: var(--psc-teal); }
+    .move-status { margin-left: auto; font-size: 12px; font-weight: 600; color: #92600A; background: #FEF3C7; border: 1px solid #FDE68A; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 10px; }
+    .move-status .ms-cancel { border: none; background: transparent; color: #92600A; text-decoration: underline; cursor: pointer; font: inherit; font-weight: 700; padding: 0; }
 
-    /* Main / chart */
     .main { flex: 1 1 auto; display: flex; min-height: 0; position: relative; }
     #chart-container { flex: 1 1 auto; height: 100%; min-width: 0; overflow: hidden; background: var(--bg); }
     #chart-container .link { stroke: #C9CDD3 !important; stroke-width: 1.5px !important; }
 
-    /* Node card (rendered inside d3-org-chart foreignObject) */
-    .oc-card { width: 100%; height: 100%; box-sizing: border-box; background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--psc-slate); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 14px; overflow: hidden; cursor: grab; transition: box-shadow 0.12s, opacity 0.15s, outline-color 0.12s; }
+    .oc-card { position: relative; width: 100%; height: 100%; box-sizing: border-box; background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--psc-slate); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 14px; overflow: hidden; cursor: pointer; transition: box-shadow 0.12s, opacity 0.15s, outline-color 0.12s; }
     .oc-card:hover { box-shadow: var(--shadow-lg); }
-    .oc-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .oc-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.25; padding-right: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .oc-title { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .oc-sub { font-size: 11px; color: var(--psc-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .oc-badge { display: inline-block; margin-top: 7px; font-size: 10px; font-weight: 700; color: var(--psc-slate); border: 1px solid var(--border); padding: 1px 7px; border-radius: 999px; letter-spacing: 0.03em; }
-    .oc-card.division-csuite { border-left-color: var(--psc-red); }
-    .oc-card.division-warehousing { border-left-color: var(--psc-charcoal); }
-    .oc-card.division-freight { border-left-color: var(--psc-slate); }
-    .oc-card.division-support { border-left-color: var(--psc-teal); }
+    .oc-move { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border: none; background: rgba(17,24,39,0.05); color: var(--text-secondary); border-radius: 5px; font-size: 13px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .oc-move:hover { background: var(--psc-red); color: #fff; }
+    .oc-card.division-csuite { border-left-color: var(--psc-red); } .oc-card.division-warehousing { border-left-color: var(--psc-charcoal); }
+    .oc-card.division-freight { border-left-color: var(--psc-slate); } .oc-card.division-support { border-left-color: var(--psc-teal); }
     .oc-card.is-ceo { box-shadow: 0 0 0 2px rgba(211,47,47,0.28), var(--shadow); }
-    .oc-card.dragging { opacity: 0.45; cursor: grabbing; }
-    .oc-card.drop-target { outline: 3px solid var(--psc-red); outline-offset: 2px; }
     .oc-card.dimmed { opacity: 0.22; }
     .oc-card.search-hit { outline: 3px solid var(--hi); outline-offset: 2px; opacity: 1 !important; }
+    .oc-card.moving { outline: 3px solid var(--gold); outline-offset: 2px; opacity: 1 !important; }
 
-    /* Floating zoom controls */
     .zoom-controls { position: absolute; left: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 12; }
     .zoom-controls .zrow { display: flex; gap: 6px; }
     .zbtn { width: 38px; height: 34px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 7px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow); display: inline-flex; align-items: center; justify-content: center; }
     .zbtn.wide { width: auto; padding: 0 12px; font-size: 12px; font-weight: 600; }
     .zbtn:hover { border-color: var(--psc-red); color: var(--psc-red); }
 
-    /* Terminated sidebar */
     .sidebar { flex: 0 0 300px; width: 300px; height: 100%; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; overflow: hidden; }
     .sidebar.hidden { display: none; }
     .sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
@@ -113,10 +96,9 @@
     .term-card .tc-role { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
     .term-card .tc-restore { font-size: 11px; font-weight: 700; color: var(--psc-red); margin-top: 6px; }
 
-    /* Modal */
     .overlay { position: fixed; inset: 0; background: rgba(17,24,39,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
     .overlay.open { display: flex; }
-    .modal { background: var(--card); border-radius: 12px; width: 100%; max-width: 460px; box-shadow: var(--shadow-lg); overflow: hidden; }
+    .modal { background: var(--card); border-radius: 12px; width: 100%; max-width: 460px; box-shadow: var(--shadow-lg); overflow: visible; }
     .modal-header { padding: 16px 22px; border-bottom: 1px solid var(--border); }
     .modal-title { font-size: 16px; font-weight: 700; margin: 0; }
     .modal-meta { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
@@ -127,10 +109,18 @@
     .field input:focus, .field select:focus { outline: none; border-color: var(--psc-red); box-shadow: 0 0 0 3px rgba(211,47,47,0.12); }
     .field input.invalid { border-color: var(--psc-red); }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-    .footer-spacer { flex: 1 1 auto; }
+    .field-error { color: var(--psc-red); font-size: 12px; font-weight: 600; }
 
-    /* Banner */
+    .autocomplete { position: relative; display: flex; flex-direction: column; gap: 6px; }
+    .ac-chip { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; max-width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 13px; font-weight: 600; }
+    .ac-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ac-chip-x { border: none; background: transparent; cursor: pointer; color: var(--text-secondary); font-size: 16px; line-height: 1; width: 20px; height: 20px; border-radius: 50%; }
+    .ac-chip-x:hover { background: #fff; color: var(--psc-red); }
+    .ac-results { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-lg); max-height: 220px; overflow-y: auto; z-index: 5; }
+    .ac-item { padding: 9px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover { background: var(--bg); }
+
     .banner { display: none; position: absolute; inset: 0; z-index: 30; align-items: center; justify-content: center; padding: 24px; background: var(--bg); }
     .banner.show { display: flex; }
     .banner-box { max-width: 540px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px 30px; box-shadow: var(--shadow); text-align: center; }
@@ -157,6 +147,7 @@
     </div>
     <div class="toolbar">
       <button class="btn btn-primary" id="btn-add" type="button">+ Add Employee</button>
+      <button class="btn" id="btn-move" type="button">Move Mode</button>
       <button class="btn" id="btn-export" type="button">Export JSON</button>
       <button class="btn" id="btn-import" type="button">Import JSON</button>
       <button class="btn" id="btn-reset" type="button">Reset to Original</button>
@@ -172,6 +163,7 @@
     <button class="filter-btn" data-filter="Warehousing" type="button"><span class="dot warehousing"></span>Warehousing</button>
     <button class="filter-btn" data-filter="Freight" type="button"><span class="dot freight"></span>Freight</button>
     <button class="filter-btn" data-filter="Support" type="button"><span class="dot support"></span>Support</button>
+    <span class="move-status" id="move-status" style="display:none"></span>
   </div>
 
   <div class="main">
@@ -219,15 +211,21 @@
           <div class="field"><label for="f-dept">Department</label><input type="text" id="f-dept" autocomplete="off" placeholder="e.g. WHSMGT"></div>
           <div class="field"><label for="f-location">Location</label><input type="text" id="f-location" autocomplete="off" placeholder="e.g. Ontario"></div>
         </div>
-        <div class="row2">
-          <div class="field"><label for="f-division">Division</label><select id="f-division"></select></div>
-          <div class="field" id="f-manager-wrap"><label for="f-manager">Reports to</label><select id="f-manager"></select></div>
+        <div class="field"><label for="f-division">Division</label><select id="f-division"></select></div>
+        <div class="field" id="f-manager-wrap">
+          <label for="f-manager-input">Reports to</label>
+          <div class="autocomplete">
+            <div class="ac-chip" id="f-manager-chip" style="display:none"></div>
+            <input type="text" id="f-manager-input" autocomplete="off" placeholder="Search manager by name or title…">
+            <div class="ac-results" id="f-manager-results" style="display:none"></div>
+          </div>
+          <div class="field-error" id="f-manager-error" style="display:none"></div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;">
         <button class="btn" id="modal-delete" type="button">Delete</button>
         <button class="btn" id="modal-terminate" type="button">Terminate</button>
-        <span class="footer-spacer"></span>
+        <span style="flex:1 1 auto"></span>
         <button class="btn" id="modal-cancel" type="button">Cancel</button>
         <button class="btn btn-primary" id="modal-save" type="button">Save</button>
       </div>
@@ -239,33 +237,30 @@
   <script>
     "use strict";
 
-    // ---------- Constants ----------
     var KEY = "proactive-restructure-state-v3";
     var KEY_ORIG = "proactive-restructure-original-v3";
     var KEY_FILTER = "proactive-restructure-filter-v3";
     var DATA_URL = "employees.json";
 
     var DIVISIONS = [
-      { key: "C-Suite", slug: "csuite", color: "#D32F2F" },
-      { key: "Warehousing", slug: "warehousing", color: "#1F2937" },
-      { key: "Freight", slug: "freight", color: "#6B7280" },
-      { key: "Support", slug: "support", color: "#0F766E" }
+      { key: "C-Suite", slug: "csuite" }, { key: "Warehousing", slug: "warehousing" },
+      { key: "Freight", slug: "freight" }, { key: "Support", slug: "support" }
     ];
     var DIV_KEYS = DIVISIONS.map(function (d) { return d.key; });
     function divSlug(key) { for (var i = 0; i < DIVISIONS.length; i++) { if (DIVISIONS[i].key === key) { return DIVISIONS[i].slug; } } return "support"; }
 
-    // ---------- State ----------
     var META = { app: "proactive-restructure", version: 3, schema: "org-chart", source: "", ceo_id: "" };
     var employees = [];
     var ceoId = "";
     var chart = null;
     var currentFilter = "all";
     var currentSearch = "";
+    var moveMode = false, moveSourceId = null;
 
     function byId(id) { id = String(id); for (var i = 0; i < employees.length; i++) { if (employees[i].id === id) { return employees[i]; } } return null; }
     function escapeHtml(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function descendantsOf(id) { var out = {}; (function rec(pid) { employees.forEach(function (e) { if (e.pid === pid && !out[e.id]) { out[e.id] = true; rec(e.id); } }); })(id); return out; }
 
-    // ---------- Division derivation (no Specialized; SPE* -> Freight) ----------
     function deriveDivision(dept, title) {
       var d = (dept || "").toUpperCase(), t = title || "";
       if (d === "OWNERS" || /chief|\bceo\b|\bcoo\b|\bcfo\b|\bcco\b|president|\bvp\b/i.test(t)) { return "C-Suite"; }
@@ -274,14 +269,9 @@
       return "Support";
     }
 
-    // ---------- Normalization (ids are not unique in source; uniquify) ----------
     function normalize(root) {
       var list = Array.isArray(root) ? root : (root && root.employees) || [];
-      if (root && !Array.isArray(root)) {
-        META.app = root.app || META.app; META.version = root.version || META.version;
-        META.schema = root.schema || META.schema; META.source = root.source || META.source;
-        META.ceo_id = root.ceo_id || META.ceo_id;
-      }
+      if (root && !Array.isArray(root)) { META.app = root.app || META.app; META.version = root.version || META.version; META.schema = root.schema || META.schema; META.source = root.source || META.source; META.ceo_id = root.ceo_id || META.ceo_id; }
       var used = {};
       return list.map(function (e) {
         e = e || {};
@@ -290,30 +280,18 @@
         used[id] = true;
         var dept = String(e.dept == null ? "" : e.dept).trim();
         var title = String(e.title == null ? "" : e.title).trim();
-        // Reclassify any legacy "Specialized" and validate; otherwise derive.
         var division = (DIV_KEYS.indexOf(e.division) !== -1) ? e.division : deriveDivision(dept, title);
-        return {
-          id: id, pid: e.pid == null ? "" : String(e.pid),
-          name: String(e.name == null ? "" : e.name).trim() || "Unnamed",
-          title: title, dept: dept, location: String(e.location == null ? "" : e.location).trim(),
-          status: e.status === "Leave" ? "Leave" : "Active", terminated: e.terminated === true, division: division
-        };
+        return { id: id, pid: e.pid == null ? "" : String(e.pid), name: String(e.name == null ? "" : e.name).trim() || "Unnamed", title: title, dept: dept, location: String(e.location == null ? "" : e.location).trim(), status: e.status === "Leave" ? "Leave" : "Active", terminated: e.terminated === true, division: division };
       });
     }
-    function computeCeoId() {
-      if (META.ceo_id && byId(META.ceo_id)) { return META.ceo_id; }
-      for (var i = 0; i < employees.length; i++) { if (!employees[i].pid) { return employees[i].id; } }
-      return employees.length ? employees[0].id : "";
-    }
+    function computeCeoId() { if (META.ceo_id && byId(META.ceo_id)) { return META.ceo_id; } for (var i = 0; i < employees.length; i++) { if (!employees[i].pid) { return employees[i].id; } } return employees.length ? employees[0].id : ""; }
     function applyData(list) { employees = list; ceoId = computeCeoId(); }
 
-    // ---------- Persistence ----------
     function wrap() { return { app: META.app, version: META.version, schema: META.schema, exportedAt: new Date().toISOString(), source: META.source, ceo_id: ceoId, employees: employees }; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(wrap())); } catch (e) { console.warn("save failed", e); } }
     function saveOriginal() { try { localStorage.setItem(KEY_ORIG, JSON.stringify(wrap())); } catch (e) { console.warn("save original failed", e); } }
     function saveFilter() { try { localStorage.setItem(KEY_FILTER, currentFilter); } catch (e) { /* ignore */ } }
 
-    // ---------- Build flat data for d3-org-chart (single root, no dangling parents) ----------
     function buildVisibleData() {
       var visible = employees.filter(function (e) { return !e.terminated; });
       var vis = {}; visible.forEach(function (e) { vis[e.id] = true; });
@@ -330,6 +308,7 @@
       var badge = e.status === "Leave" ? '<div class="oc-badge">On Leave</div>' : "";
       var cls = "oc-card division-" + divSlug(e.division) + (e.id === ceoId ? " is-ceo" : "");
       return '<div class="' + cls + '" data-emp-id="' + escapeHtml(e.id) + '">' +
+        '<button class="oc-move" data-emp-id="' + escapeHtml(e.id) + '" title="Change manager" aria-label="Change manager for ' + escapeHtml(e.name) + '">&#8646;</button>' +
         '<div class="oc-name">' + escapeHtml(e.name) + '</div>' +
         '<div class="oc-title">' + escapeHtml(e.title || "—") + '</div>' +
         '<div class="oc-sub">' + escapeHtml(sub) + '</div>' + badge + '</div>';
@@ -337,10 +316,7 @@
 
     // ---------- Chart ----------
     function initChart() {
-      if (typeof d3 === "undefined" || typeof d3.OrgChart === "undefined") {
-        showBanner("The chart library (d3 / d3-org-chart) failed to load from the CDN. This app needs internet the first time. Check your connection and reload.", "Library failed to load");
-        return false;
-      }
+      if (typeof d3 === "undefined" || typeof d3.OrgChart === "undefined") { showBanner("The chart library (d3 / d3-org-chart) failed to load from the CDN. This app needs internet the first time. Check your connection and reload.", "Library failed to load"); return false; }
       chart = new d3.OrgChart()
         .container("#chart-container")
         .nodeId(function (d) { return d.id; })
@@ -355,136 +331,103 @@
         .nodeContent(nodeContentFn);
       return true;
     }
-
     function postRender() {
-      // Tame wheel-zoom sensitivity (~5x quieter than d3 default) + clamp scale.
-      try {
-        var zb = chart.zoomBehavior && chart.zoomBehavior();
-        if (zb) {
-          zb.scaleExtent([0.1, 2.5]);
-          zb.wheelDelta(function (event) {
-            return -event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) / 5;
-          });
-        }
-      } catch (e) { /* ignore */ }
-      enableDrag();
+      try { var zb = chart.zoomBehavior && chart.zoomBehavior(); if (zb) { zb.scaleExtent([0.1, 2.5]); zb.wheelDelta(function (event) { return -event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) / 5; }); } } catch (e) { /* ignore */ }
+      attachCardHandlers();
       applyFilter();
       applySearchClasses(currentSearch);
+      if (moveMode && moveSourceId) { setMovingHighlight(moveSourceId); }
     }
-    function renderChart() {
-      chart.data(buildVisibleData()).render();
-      postRender();
-      renderSidebar();
+    function renderChart() { chart.data(buildVisibleData()).render(); postRender(); renderSidebar(); }
+
+    // Card click handlers (re-applied after each render; idempotent via onclick=).
+    function attachCardHandlers() {
+      var cards = document.querySelectorAll("#chart-container .oc-card");
+      for (var i = 0; i < cards.length; i++) {
+        (function (card) {
+          card.onclick = function (ev) {
+            var id = card.getAttribute("data-emp-id");
+            if (ev.target.closest(".oc-move")) { ev.stopPropagation(); openEdit(id, true); return; }
+            if (moveMode) { handleMoveClick(id); } else { openEdit(id); }
+          };
+        })(cards[i]);
+      }
     }
 
-    // ---------- Drag-to-reparent (library has no built-in DnD) ----------
-    function descendantsOf(id) {
-      var out = {};
-      (function rec(pid) { employees.forEach(function (e) { if (e.pid === pid && !out[e.id]) { out[e.id] = true; rec(e.id); } }); })(id);
-      return out;
+    // ---------- Reparent (click flow + move mode) ----------
+    function reparentNode(srcId, targetId) {
+      if (srcId === ceoId) { return false; }
+      var emp = byId(srcId), target = byId(targetId);
+      if (!emp || !target || targetId === srcId) { return false; }
+      if (descendantsOf(srcId)[targetId]) { return false; }
+      emp.pid = targetId; save(); renderChart(); return true;
     }
-    function reparentNode(dragId, dropId) {
-      if (dragId === ceoId) { return; }
-      var emp = byId(dragId), target = byId(dropId);
-      if (!emp || !target || dropId === dragId) { return; }
-      var desc = descendantsOf(dragId);
-      if (desc[dropId]) { return; } // would create a cycle
-      emp.pid = dropId; save(); renderChart();
+
+    // ---------- Move Mode ----------
+    function clearMovingHighlight() { var els = document.querySelectorAll(".oc-card.moving"); for (var i = 0; i < els.length; i++) { els[i].classList.remove("moving"); } }
+    function setMovingHighlight(id) { clearMovingHighlight(); var el = document.querySelector('#chart-container .oc-card[data-emp-id="' + id + '"]'); if (el) { el.classList.add("moving"); } }
+    function updateMoveStatus(tempMsg) {
+      var s = document.getElementById("move-status");
+      if (!moveMode) { s.style.display = "none"; s.textContent = ""; return; }
+      s.style.display = ""; s.textContent = "";
+      var label = document.createElement("span");
+      if (tempMsg) { label.textContent = tempMsg; }
+      else if (moveSourceId) { var e = byId(moveSourceId); label.textContent = "Moving: " + (e ? e.name : "?") + " — click their new manager"; }
+      else { label.textContent = "Move mode — click the person to move"; }
+      s.appendChild(label);
+      var cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "ms-cancel"; cancel.textContent = "Cancel";
+      cancel.addEventListener("click", exitMove); s.appendChild(cancel);
     }
-    function dropTargetFrom(srcEvent, dragId) {
-      var els = document.elementsFromPoint(srcEvent.clientX, srcEvent.clientY);
-      for (var i = 0; i < els.length; i++) {
-        var c = els[i].closest ? els[i].closest(".oc-card") : null;
-        if (c && c.getAttribute("data-emp-id") !== dragId) { return c; }
+    function enterMove() { moveMode = true; moveSourceId = null; document.body.classList.add("move-mode"); document.getElementById("btn-move").classList.add("btn-active"); updateMoveStatus(); }
+    function exitMove() { moveMode = false; moveSourceId = null; document.body.classList.remove("move-mode"); document.getElementById("btn-move").classList.remove("btn-active"); clearMovingHighlight(); updateMoveStatus(); }
+    function toggleMove() { if (moveMode) { exitMove(); } else { enterMove(); } }
+    function handleMoveClick(id) {
+      if (!moveSourceId) {
+        if (id === ceoId) { updateMoveStatus("The CEO can't be moved — pick someone else"); return; }
+        moveSourceId = id; setMovingHighlight(id); updateMoveStatus(); return;
       }
-      return null;
-    }
-    function enableDrag() {
-      var startX = 0, startY = 0, dragId = null;
-      d3.selectAll("#chart-container .oc-card").call(
-        d3.drag()
-          .on("start", function (event) {
-            if (event.sourceEvent) { event.sourceEvent.stopPropagation(); }
-            dragId = this.getAttribute("data-emp-id");
-            startX = event.x; startY = event.y;
-            this.classList.add("dragging");
-          })
-          .on("drag", function (event) {
-            var prev = document.querySelectorAll(".oc-card.drop-target");
-            for (var i = 0; i < prev.length; i++) { prev[i].classList.remove("drop-target"); }
-            if (event.sourceEvent) { var t = dropTargetFrom(event.sourceEvent, dragId); if (t) { t.classList.add("drop-target"); } }
-          })
-          .on("end", function (event) {
-            this.classList.remove("dragging");
-            var prev = document.querySelectorAll(".oc-card.drop-target");
-            for (var i = 0; i < prev.length; i++) { prev[i].classList.remove("drop-target"); }
-            var moved = Math.hypot(event.x - startX, event.y - startY);
-            if (moved < 5) { if (dragId) { openEdit(dragId); } return; } // treat as click
-            if (event.sourceEvent) {
-              var t = dropTargetFrom(event.sourceEvent, dragId);
-              if (t) { reparentNode(dragId, t.getAttribute("data-emp-id")); }
-            }
-          })
-      );
+      if (id === moveSourceId) { return; }
+      if (descendantsOf(moveSourceId)[id]) { var e = byId(moveSourceId); updateMoveStatus("Can't move " + (e ? e.name : "") + " under their own report — pick another"); return; }
+      reparentNode(moveSourceId, id); exitMove();
     }
 
     // ---------- Filter ----------
     function applyFilter() {
       var cards = document.querySelectorAll("#chart-container .oc-card");
       var slug = currentFilter === "all" ? null : "division-" + divSlug(currentFilter);
-      for (var i = 0; i < cards.length; i++) {
-        if (!slug || cards[i].classList.contains(slug)) { cards[i].classList.remove("dimmed"); }
-        else { cards[i].classList.add("dimmed"); }
-      }
+      for (var i = 0; i < cards.length; i++) { if (!slug || cards[i].classList.contains(slug)) { cards[i].classList.remove("dimmed"); } else { cards[i].classList.add("dimmed"); } }
       var btns = document.querySelectorAll(".filter-btn");
       for (var j = 0; j < btns.length; j++) { btns[j].classList.toggle("active", btns[j].getAttribute("data-filter") === currentFilter); }
     }
     function setFilter(key) { currentFilter = key; saveFilter(); applyFilter(); }
 
     // ---------- Search ----------
-    function fuzzy(q, text) {
-      q = q.toLowerCase(); text = text.toLowerCase();
-      if (text.indexOf(q) !== -1) { return true; }
-      var i = 0; for (var j = 0; j < text.length && i < q.length; j++) { if (text[j] === q[i]) { i++; } } return i === q.length;
-    }
+    function fuzzy(q, text) { q = q.toLowerCase(); text = text.toLowerCase(); if (text.indexOf(q) !== -1) { return true; } var i = 0; for (var j = 0; j < text.length && i < q.length; j++) { if (text[j] === q[i]) { i++; } } return i === q.length; }
     function matches(emp, q) { return fuzzy(q, emp.name + " " + (emp.title || "") + " " + (emp.dept || "")); }
     function applySearchClasses(value) {
-      currentSearch = value || "";
-      var q = currentSearch.trim();
-      var cards = document.querySelectorAll("#chart-container .oc-card");
-      var count = 0;
+      currentSearch = value || ""; var q = currentSearch.trim();
+      var cards = document.querySelectorAll("#chart-container .oc-card"); var count = 0;
       for (var i = 0; i < cards.length; i++) {
-        var emp = byId(cards[i].getAttribute("data-emp-id"));
-        cards[i].classList.remove("search-hit");
+        var emp = byId(cards[i].getAttribute("data-emp-id")); cards[i].classList.remove("search-hit");
         if (q && emp && matches(emp, q)) { cards[i].classList.add("search-hit"); count++; }
       }
       document.getElementById("search-count").textContent = q ? (count ? count + (count > 1 ? " matches" : " match") : "no match") : "";
       return count;
     }
-    function firstMatchId(q) {
-      for (var i = 0; i < employees.length; i++) { if (!employees[i].terminated && matches(employees[i], q)) { return employees[i].id; } }
-      return null;
-    }
-    function centerOnSearch() {
-      var q = currentSearch.trim();
-      if (!q || !chart) { return; }
-      var id = firstMatchId(q);
-      if (id) { chart.clearHighlighting(); chart.setHighlighted(id).setCentered(id).render(); postRender(); }
-    }
+    function firstMatchId(q) { for (var i = 0; i < employees.length; i++) { if (!employees[i].terminated && matches(employees[i], q)) { return employees[i].id; } } return null; }
+    function centerOnSearch() { var q = currentSearch.trim(); if (!q || !chart) { return; } var id = firstMatchId(q); if (id) { chart.clearHighlighting(); chart.setHighlighted(id).setCentered(id).render(); postRender(); } }
     function clearSearch() { document.getElementById("search").value = ""; applySearchClasses(""); }
 
-    // ---------- Actions ----------
+    // ---------- Other actions ----------
     function genId() { var id = "new-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6); while (byId(id)) { id += "x"; } return id; }
     function terminate(id) { var e = byId(id); if (!e || e.terminated) { return; } employees.forEach(function (c) { if (c.pid === e.id) { c.pid = e.pid; } }); e.terminated = true; save(); renderChart(); }
     function unterminate(id) { var e = byId(id); if (!e) { return; } var m = e.pid ? byId(e.pid) : null; if (!m || m.terminated) { e.pid = (e.id === ceoId) ? "" : ceoId; } e.terminated = false; save(); renderChart(); }
     function removeEmployee(id) { var e = byId(id); if (!e) { return; } employees.forEach(function (c) { if (c.pid === e.id) { c.pid = e.pid; } }); employees = employees.filter(function (x) { return x.id !== id; }); if (id === ceoId) { ceoId = computeCeoId(); } save(); renderChart(); }
 
     function exportJSON() {
-      var blob = new Blob([JSON.stringify(wrap(), null, 2)], { type: "application/json" });
-      var url = URL.createObjectURL(blob);
+      var blob = new Blob([JSON.stringify(wrap(), null, 2)], { type: "application/json" }); var url = URL.createObjectURL(blob);
       var d = new Date(), stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-      var a = document.createElement("a"); a.href = url; a.download = "proactive-org-" + stamp + ".json";
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      var a = document.createElement("a"); a.href = url; a.download = "proactive-org-" + stamp + ".json"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
     function importJSON(file) {
       var reader = new FileReader();
@@ -494,8 +437,7 @@
         if (!Array.isArray(list)) { alert('That file does not look like an org export (no "employees" array).'); return; }
         applyData(normalize(data)); save(); hideBanner(); renderChart(); if (chart) { chart.fit(); }
       };
-      reader.onerror = function () { alert("Could not read that file."); };
-      reader.readAsText(file);
+      reader.onerror = function () { alert("Could not read that file."); }; reader.readAsText(file);
     }
     function resetToOriginal() {
       if (!confirm("Reset to the original org chart? This discards all current changes.")) { return; }
@@ -507,85 +449,120 @@
     }
     function printPDF() {
       if (!chart || typeof chart.exportImg !== "function") { window.print(); return; }
-      chart.exportImg({
-        full: true, save: false, scale: 2, onLoad: function (base64) {
-          try {
-            var Ctor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
-            if (!Ctor) { window.print(); return; }
-            var img = new Image();
-            img.onload = function () {
-              var orient = img.width >= img.height ? "l" : "p";
-              var pdf = new Ctor({ orientation: orient, unit: "pt", format: "a4" });
-              var pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
-              var ratio = Math.min(pw / img.width, ph / img.height);
-              var w = img.width * ratio, h = img.height * ratio;
-              pdf.addImage(base64, "PNG", (pw - w) / 2, (ph - h) / 2, w, h);
-              pdf.save("proactive-org.pdf");
-            };
-            img.src = base64;
-          } catch (e) { console.warn("PDF export failed, using print()", e); window.print(); }
-        }
-      });
+      chart.exportImg({ full: true, save: false, scale: 2, onLoad: function (base64) {
+        try {
+          var Ctor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF; if (!Ctor) { window.print(); return; }
+          var img = new Image();
+          img.onload = function () {
+            var orient = img.width >= img.height ? "l" : "p";
+            var pdf = new Ctor({ orientation: orient, unit: "pt", format: "a4" });
+            var pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+            var ratio = Math.min(pw / img.width, ph / img.height), w = img.width * ratio, h = img.height * ratio;
+            pdf.addImage(base64, "PNG", (pw - w) / 2, (ph - h) / 2, w, h); pdf.save("proactive-org.pdf");
+          };
+          img.src = base64;
+        } catch (e) { console.warn("PDF export failed, using print()", e); window.print(); }
+      } });
     }
-
-    // ---------- Zoom controls ----------
     function zReset() { if (!chart) { return; } if (typeof chart.expandAll === "function") { chart.expandAll(); } postRender(); chart.fit(); }
 
-    // ---------- Modal ----------
+    // ---------- Modal + manager autocomplete ----------
     var overlay = document.getElementById("overlay");
     var fName = document.getElementById("f-name"), fTitle = document.getElementById("f-title");
-    var fDept = document.getElementById("f-dept"), fLocation = document.getElementById("f-location");
-    var fDivision = document.getElementById("f-division");
-    var fManagerWrap = document.getElementById("f-manager-wrap"), fManager = document.getElementById("f-manager");
+    var fDept = document.getElementById("f-dept"), fLocation = document.getElementById("f-location"), fDivision = document.getElementById("f-division");
+    var fManagerWrap = document.getElementById("f-manager-wrap"), fManagerInput = document.getElementById("f-manager-input");
+    var fManagerChip = document.getElementById("f-manager-chip"), fManagerResults = document.getElementById("f-manager-results"), fManagerError = document.getElementById("f-manager-error");
     var modalTitle = document.getElementById("modal-title"), modalMeta = document.getElementById("modal-meta");
     var btnDelete = document.getElementById("modal-delete"), btnTerminate = document.getElementById("modal-terminate");
     var modalMode = null, modalId = null, divisionTouched = false;
+    var selectedManagerId = "", modalExcluded = {};
 
     function populateDivisions(sel) { fDivision.textContent = ""; DIVISIONS.forEach(function (d) { var o = document.createElement("option"); o.value = d.key; o.textContent = d.key; fDivision.appendChild(o); }); if (sel) { fDivision.value = sel; } }
-    function populateManagers(selId) {
-      fManager.textContent = "";
-      employees.filter(function (e) { return !e.terminated; }).slice().sort(function (a, b) { return a.name.localeCompare(b.name); })
-        .forEach(function (e) { var o = document.createElement("option"); o.value = e.id; o.textContent = e.name + (e.title ? " — " + e.title : ""); fManager.appendChild(o); });
-      if (selId) { fManager.value = selId; }
+    function clearManagerError() { fManagerError.style.display = "none"; fManagerError.textContent = ""; fManagerInput.classList.remove("invalid"); }
+    function showManagerError(msg) { fManagerError.textContent = msg; fManagerError.style.display = ""; fManagerInput.classList.add("invalid"); }
+    function clearManagerResults() { fManagerResults.style.display = "none"; fManagerResults.textContent = ""; }
+    function renderManagerChip() {
+      fManagerChip.textContent = "";
+      if (selectedManagerId) {
+        var m = byId(selectedManagerId); fManagerChip.style.display = "";
+        var span = document.createElement("span"); span.textContent = m ? (m.name + (m.title ? " — " + m.title : "")) : selectedManagerId; fManagerChip.appendChild(span);
+        var x = document.createElement("button"); x.type = "button"; x.className = "ac-chip-x"; x.textContent = "×"; x.title = "Clear";
+        x.addEventListener("click", function () { selectedManagerId = ""; renderManagerChip(); clearManagerError(); fManagerInput.focus(); });
+        fManagerChip.appendChild(x);
+      } else { fManagerChip.style.display = "none"; }
     }
+    function managerCandidates(q) {
+      q = (q || "").trim().toLowerCase(); var res = [];
+      for (var i = 0; i < employees.length; i++) {
+        var e = employees[i];
+        if (e.terminated || modalExcluded[e.id]) { continue; }
+        if (q) { var hay = (e.name + " " + (e.title || "")).toLowerCase(); if (hay.indexOf(q) === -1 && !fuzzy(q, hay)) { continue; } }
+        res.push(e); if (res.length >= 8) { break; }
+      }
+      return res;
+    }
+    function renderManagerResults() {
+      var q = fManagerInput.value; var list = managerCandidates(q);
+      fManagerResults.textContent = "";
+      if (!q.trim() || !list.length) { fManagerResults.style.display = "none"; return; }
+      list.forEach(function (e) {
+        var item = document.createElement("div"); item.className = "ac-item"; item.textContent = e.name + (e.title ? " — " + e.title : "");
+        item.addEventListener("mousedown", function (ev) { ev.preventDefault(); selectedManagerId = e.id; fManagerInput.value = ""; renderManagerChip(); clearManagerResults(); clearManagerError(); });
+        fManagerResults.appendChild(item);
+      });
+      fManagerResults.style.display = "";
+    }
+
     function openModal() { overlay.classList.add("open"); fName.classList.remove("invalid"); window.setTimeout(function () { fName.focus(); }, 0); }
-    function closeModal() { overlay.classList.remove("open"); modalMode = null; modalId = null; }
+    function closeModal() { overlay.classList.remove("open"); clearManagerResults(); modalMode = null; modalId = null; }
     function openAdd() {
-      modalMode = "add"; modalId = null; divisionTouched = false;
+      exitMove(); modalMode = "add"; modalId = null; divisionTouched = false;
       modalTitle.textContent = "Add Employee"; modalMeta.textContent = "";
       fName.value = ""; fTitle.value = ""; fDept.value = ""; fLocation.value = "";
-      populateDivisions(deriveDivision("", "")); populateManagers(ceoId);
+      populateDivisions(deriveDivision("", ""));
+      modalExcluded = {}; selectedManagerId = ceoId; fManagerInput.value = ""; renderManagerChip(); clearManagerResults(); clearManagerError();
       fManagerWrap.style.display = ""; btnDelete.style.display = "none"; btnTerminate.style.display = "none";
       openModal();
     }
-    function openEdit(id) {
-      var e = byId(id); if (!e) { return; }
+    function openEdit(id, focusManager) {
+      exitMove(); var e = byId(id); if (!e) { return; }
       modalMode = "edit"; modalId = id; divisionTouched = true;
       modalTitle.textContent = "Edit Employee";
       modalMeta.textContent = "ID " + e.id + "  ·  " + e.status + (e.terminated ? "  ·  Terminated" : "");
       fName.value = e.name; fTitle.value = e.title; fDept.value = e.dept; fLocation.value = e.location;
       populateDivisions(e.division);
-      fManagerWrap.style.display = "none"; btnDelete.style.display = ""; btnTerminate.style.display = e.terminated ? "none" : "";
+      if (id === ceoId) { fManagerWrap.style.display = "none"; selectedManagerId = ""; }
+      else { fManagerWrap.style.display = ""; modalExcluded = descendantsOf(id); modalExcluded[id] = true; selectedManagerId = e.pid || ""; fManagerInput.value = ""; renderManagerChip(); clearManagerResults(); clearManagerError(); }
+      btnDelete.style.display = ""; btnTerminate.style.display = e.terminated ? "none" : "";
       openModal();
+      if (focusManager && id !== ceoId) { window.setTimeout(function () { fManagerInput.focus(); }, 30); }
     }
     function saveModal() {
       var name = fName.value.trim();
       if (!name) { fName.classList.add("invalid"); fName.focus(); return; }
+      clearManagerError();
       var title = fTitle.value.trim(), dept = fDept.value.trim(), location = fLocation.value.trim(), division = fDivision.value;
       if (modalMode === "add") {
-        employees.push({ id: genId(), pid: fManager.value || ceoId, name: name, title: title, dept: dept, location: location, status: "Active", terminated: false, division: division });
+        employees.push({ id: genId(), pid: selectedManagerId || ceoId, name: name, title: title, dept: dept, location: location, status: "Active", terminated: false, division: division });
       } else if (modalMode === "edit") {
-        var e = byId(modalId); if (e) { e.name = name; e.title = title; e.dept = dept; e.location = location; e.division = division; }
+        var e = byId(modalId); if (!e) { closeModal(); return; }
+        if (modalId !== ceoId) {
+          var newPid = selectedManagerId || e.pid;
+          if (newPid && newPid !== e.pid) {
+            if (newPid === modalId) { showManagerError("An employee can't report to themselves."); return; }
+            if (descendantsOf(modalId)[newPid]) { showManagerError("Can't report to one of their own reports."); return; }
+          }
+          e.pid = newPid;
+        }
+        e.name = name; e.title = title; e.dept = dept; e.location = location; e.division = division;
       }
       closeModal(); save(); renderChart();
     }
 
     // ---------- Terminated sidebar ----------
     function renderSidebar() {
-      var list = document.getElementById("term-list");
-      var term = employees.filter(function (e) { return e.terminated; });
-      document.getElementById("term-count").textContent = String(term.length);
-      list.textContent = "";
+      var list = document.getElementById("term-list"); var term = employees.filter(function (e) { return e.terminated; });
+      document.getElementById("term-count").textContent = String(term.length); list.textContent = "";
       if (!term.length) { var empty = document.createElement("div"); empty.className = "sidebar-empty"; empty.textContent = "No terminated employees."; list.appendChild(empty); return; }
       term.sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (e) {
         var card = document.createElement("div"); card.className = "term-card"; card.title = "Click to reinstate";
@@ -593,19 +570,18 @@
         var r = document.createElement("div"); r.className = "tc-role"; r.textContent = e.title || "—";
         var a = document.createElement("div"); a.className = "tc-restore"; a.textContent = "↩ Reinstate";
         card.appendChild(n); card.appendChild(r); card.appendChild(a);
-        card.addEventListener("click", function () { unterminate(e.id); });
-        list.appendChild(card);
+        card.addEventListener("click", function () { unterminate(e.id); }); list.appendChild(card);
       });
     }
     function toggleSidebar() { document.getElementById("sidebar").classList.toggle("hidden"); }
 
-    // ---------- Banner ----------
     function showBanner(msg, title) { if (title) { document.getElementById("banner-title").textContent = title; } if (msg) { document.getElementById("banner-msg").textContent = msg; } document.getElementById("banner").classList.add("show"); }
     function hideBanner() { document.getElementById("banner").classList.remove("show"); }
 
     // ---------- Wiring ----------
     var importFile = document.getElementById("import-file");
     document.getElementById("btn-add").addEventListener("click", openAdd);
+    document.getElementById("btn-move").addEventListener("click", toggleMove);
     document.getElementById("btn-export").addEventListener("click", exportJSON);
     document.getElementById("btn-import").addEventListener("click", function () { importFile.click(); });
     document.getElementById("btn-reset").addEventListener("click", resetToOriginal);
@@ -615,43 +591,35 @@
     importFile.addEventListener("change", function () { if (importFile.files && importFile.files[0]) { importJSON(importFile.files[0]); } importFile.value = ""; });
 
     document.querySelectorAll(".filter-btn").forEach(function (b) { b.addEventListener("click", function () { setFilter(b.getAttribute("data-filter")); }); });
-
     document.getElementById("zoom-in").addEventListener("click", function () { if (chart) { chart.zoomIn(); } });
     document.getElementById("zoom-out").addEventListener("click", function () { if (chart) { chart.zoomOut(); } });
     document.getElementById("zoom-fit").addEventListener("click", function () { if (chart) { chart.fit(); } });
     document.getElementById("zoom-reset").addEventListener("click", zReset);
 
+    // Clicking empty chart background cancels Move Mode.
+    document.getElementById("chart-container").addEventListener("click", function (ev) { if (moveMode && !ev.target.closest(".oc-card")) { exitMove(); } });
+
     document.getElementById("modal-cancel").addEventListener("click", closeModal);
     document.getElementById("modal-save").addEventListener("click", saveModal);
     btnTerminate.addEventListener("click", function () { if (modalId) { var id = modalId; closeModal(); terminate(id); } });
-    btnDelete.addEventListener("click", function () {
-      if (!modalId) { return; }
-      var e = byId(modalId);
-      if (e && confirm("Permanently delete " + e.name + "? Their reports move up to " + (e.pid ? "their manager" : "the top") + ".")) { var id = modalId; closeModal(); removeEmployee(id); }
-    });
+    btnDelete.addEventListener("click", function () { if (!modalId) { return; } var e = byId(modalId); if (e && confirm("Permanently delete " + e.name + "? Their reports move up to " + (e.pid ? "their manager" : "the top") + ".")) { var id = modalId; closeModal(); removeEmployee(id); } });
     overlay.addEventListener("click", function (ev) { if (ev.target === overlay) { closeModal(); } });
     [fName, fTitle, fDept, fLocation].forEach(function (inp) { inp.addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); saveModal(); } }); });
     fName.addEventListener("input", function () { fName.classList.remove("invalid"); });
     fDivision.addEventListener("change", function () { divisionTouched = true; });
     [fDept, fTitle].forEach(function (inp) { inp.addEventListener("input", function () { if (modalMode === "add" && !divisionTouched) { fDivision.value = deriveDivision(fDept.value, fTitle.value); } }); });
-    document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && overlay.classList.contains("open")) { closeModal(); } });
+    fManagerInput.addEventListener("input", renderManagerResults);
+    fManagerInput.addEventListener("focus", renderManagerResults);
+    fManagerInput.addEventListener("blur", function () { window.setTimeout(clearManagerResults, 150); });
+    document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") { if (overlay.classList.contains("open")) { closeModal(); } else if (moveMode) { exitMove(); } } });
 
     var searchTimer = null;
-    document.getElementById("search").addEventListener("input", function (ev) {
-      var v = ev.target.value;
-      applySearchClasses(v); // instant highlight/count
-      window.clearTimeout(searchTimer);
-      searchTimer = window.setTimeout(centerOnSearch, 320); // center on first match after a pause
-    });
+    document.getElementById("search").addEventListener("input", function (ev) { var v = ev.target.value; applySearchClasses(v); window.clearTimeout(searchTimer); searchTimer = window.setTimeout(centerOnSearch, 320); });
     document.getElementById("search-clear").addEventListener("click", clearSearch);
 
     // ---------- Boot ----------
     function loadFilter() { try { var f = localStorage.getItem(KEY_FILTER); if (f) { currentFilter = f; } } catch (e) { /* ignore */ } }
-    function start() {
-      if (!initChart()) { return; }
-      renderChart();
-      try { chart.fit(); } catch (e) { /* ignore */ }
-    }
+    function start() { if (!initChart()) { return; } renderChart(); try { chart.fit(); } catch (e) { /* ignore */ } }
     function boot() {
       loadFilter();
       var saved = null; try { saved = localStorage.getItem(KEY); } catch (e) { /* ignore */ }

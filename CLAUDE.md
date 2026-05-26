@@ -95,11 +95,18 @@ Support 54, Freight 34, C-Suite 10. Editable per-employee in the modal.
 - Tree org chart, orthogonal connectors. Spacing: `nodeWidth 220`, `nodeHeight
   110`, `childrenMargin 40`, `siblingsMargin 20`, `compactMarginBetween 12` (note
   d3-org-chart wants these as **functions**, e.g. `.nodeWidth(()=>220)`).
-- **Drag-to-reparent:** d3-org-chart 3.1.1 has **no built-in DnD**, so it's
-  implemented with `d3.drag` on the card + `elementsFromPoint` hit-testing. On
-  drop the dragged node's `pid` is set to the target and saved; cycles (dropping
-  onto a descendant) and dragging the CEO are blocked. A small (<5px) drag is
-  treated as a click → opens the edit modal.
+- **Reparenting is click-based** (drag was removed). Drag-to-reparent was tried on
+  3 libraries and is unreliable here: d3-org-chart puts `d3.zoom` on the same SVG
+  as the cards, so node-drag fights chart-pan, and at fit zoom each card is only
+  ~12×6 px. Two reliable paths instead:
+  - **Click a card (or its ⇄ icon) → edit modal → "Reports to"** searchable
+    autocomplete. It lists all employees except the person, their descendants, and
+    terminated staff; pick one (chip + × to clear); Save sets `pid` and redraws.
+    Same-person / descendant selections are blocked with an inline error.
+  - **Move Mode** toolbar button: click it, click the person to move, then click
+    their new manager. CEO can't be a source; descendant targets are rejected.
+    Esc or a background click cancels.
+  `reparentNode()` enforces the CEO/cycle rules for both paths.
 - **Zoom:** `scaleExtent([0.1, 2.5])`, `duration(400)`; wheel sensitivity tamed
   ~5× via `chart.zoomBehavior().wheelDelta(...)`. Floating controls (bottom-left):
   Zoom In/Out → `zoomIn()`/`zoomOut()`, Fit → `fit()`, Reset → `expandAll()+fit()`
@@ -119,8 +126,9 @@ Support 54, Freight 34, C-Suite 10. Editable per-employee in the modal.
 ## Conventions
 
 - Single `index.html` for app code; data in `employees.json`. CDN deps only, no build.
-- d3-org-chart re-renders rebuild all node DOM, so re-attach drag + re-apply
-  filter/search classes after every render (see `postRender()`).
+- d3-org-chart re-renders rebuild all node DOM, so re-attach card click handlers
+  (`attachCardHandlers`, idempotent via `onclick=`) + re-apply filter/search/move
+  classes after every render (see `postRender()`).
 - No `innerHTML` with unescaped user data — `nodeContent` HTML strings run through
   `escapeHtml()`.
 - Brand palette in `:root` (no amber after Specialized was dropped). Division
@@ -135,10 +143,12 @@ cd proactive-restructure
 python3 -m http.server 8000   # then open http://localhost:8000
 ```
 
-Manual checks: 220 nodes render under the CEO with orthogonal connectors; drag 3
-nodes to new managers and reload (reparent persists); click opens the modal;
-search highlights + centers; division filters dim; zoom feels smooth via wheel +
-buttons; Print/PDF produces a usable PDF.
+Manual checks: 220 nodes render under the CEO with orthogonal connectors; click a
+card → modal → "Reports to" autocomplete reparents and persists on reload; Move
+Mode reparents in two clicks; CEO/descendant moves are blocked; search highlights
++ centers; division filters dim; zoom feels smooth via wheel + buttons; Print/PDF
+produces a usable PDF. The click-reparent flow + Move Mode are verified end-to-end
+in headless Chromium (puppeteer); drag/zoom/PDF visuals still need a real browser.
 
 Headless checks (no browser):
 
