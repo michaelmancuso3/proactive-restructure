@@ -3,42 +3,39 @@
 ## Purpose
 
 An interactive org chart for modelling proposed restructures at Proactive Supply
-Chain Group. The full ~220-person hierarchy renders as a true org chart with
-reporting lines; leadership drags nodes to change who reports to whom, terminates
-or adds people, color-codes and filters by division, and exports/prints the
-result. Presentation-ready.
+Chain Group. The full ~220-person hierarchy renders as a true tree with
+Visio-style orthogonal connectors; leadership drags nodes to change reporting
+lines, color-codes/filters by division, terminates or adds people, and
+exports/prints the result. Presentation-ready.
 
 ## Architecture
 
-Org chart built on **dabeng/OrgChart** (MIT licensed jQuery plugin) loaded from
-CDN. This replaced an earlier BalkanGraph attempt, whose free Community edition
-gated drag-to-reparent and search behind the paid tier.
+Built on **d3-org-chart** (MIT, by bumbeishvili — the d3-based library used by
+Coca-Cola, Microsoft, etc.). Replaced earlier BalkanGraph and dabeng attempts.
 
-Dependencies (all CDN, pinned; the app needs internet on first load, then caches
-data in localStorage and works offline):
+Dependencies (all CDN; the app needs internet on first load, then caches data in
+localStorage and works offline):
 
 ```
-jQuery        3.7.1   https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js
-OrgChart CSS  4.0.1   https://cdn.jsdelivr.net/npm/orgchart@4.0.1/dist/css/jquery.orgchart.min.css
-OrgChart JS   4.0.1   https://cdn.jsdelivr.net/npm/orgchart@4.0.1/dist/js/jquery.orgchart.min.js
-html2canvas   1.4.1   (used by OrgChart export)
-jsPDF         2.5.1   (used by OrgChart export)
+d3            7      https://cdn.jsdelivr.net/npm/d3@7
+d3-flextree   2.1.2  https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js
+d3-org-chart  3.1.1  https://cdn.jsdelivr.net/npm/d3-org-chart@3.1.1
+jsPDF         2.5.1  https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js
 ```
 
-**Do not bump these to npm "latest".** orgchart 5.x dropped jQuery (no
-`$().orgchart()`), jQuery 4.x is a breaking major, and jsPDF 3.x/4.x changed the
-global/API that OrgChart 4.x's export expects. 4.0.1 is the last jQuery-plugin
-release. (Note: the originally requested `orgchart@4.6.1` does not exist on npm;
-4.0.1 is the correct latest 4.x.)
+**d3-flextree is required** — d3-org-chart calls `d3.flextree(...)` for layout
+and throws `d3.flextree is not a function` without it. Load it after d3 and
+before d3-org-chart. Keep jsPDF at 2.x (3.x/4.x changed the global/API).
+d3-org-chart 3.1.1 is the current latest.
 
-Data is kept **separate from code**: `index.html` `fetch()`es `employees.json` on
+Data is kept separate from code: `index.html` `fetch()`es `employees.json` on
 boot — the roster is never inlined.
 
 ## File structure
 
 ```
 proactive-restructure/
-├── index.html          # App: HTML + CSS + JS. Loads dabeng/OrgChart from CDN, fetches data.
+├── index.html          # App: HTML + CSS + JS. Loads d3-org-chart from CDN, fetches data.
 ├── employees.json      # Roster wrapper: { app, version, schema, exportedAt, source, ceo_id, employees[] }.
 ├── CLAUDE.md
 └── .github/workflows/claude.yml
@@ -46,102 +43,112 @@ proactive-restructure/
 
 ## Data model
 
-Each employee record:
-
 ```jsonc
 { "id": "000293", "pid": "", "name": "Salvatore Mancuso",
   "title": "Chief Executive Officer", "dept": "OWNERS", "location": "Ontario",
   "status": "Active", "terminated": false, "division": "C-Suite" }
 ```
 
-- Flat `id`/`pid` is the source of truth. At render time it's converted to the
-  **nested tree** (`{ id, name, children[] }`) that dabeng requires; on changes
-  the flat array is updated and the tree rebuilt.
+- Flat `id`/`pid` is the source of truth. At render time it's transformed into the
+  flat `{id, _parent}` shape d3-org-chart consumes (it stratifies internally).
+  Exactly one root (CEO, `_parent: null`); any node whose manager is
+  terminated/missing is re-homed to the root so stratify never sees a dangling
+  parent or multiple roots.
 - `status`: `"Active"` | `"Leave"` (Leave shows an "On Leave" badge).
 - `terminated: true` hides the node and lists it in the Terminated sidebar.
-- `division` (see below) drives the colored accent and the filter.
+- `division` drives the colored left border and the filter.
 
 ### Important: source ids are NOT unique
 
 The ADP dump reuses `id` across different people (220 records, 174 distinct ids,
-46 collisions). dabeng needs unique node ids, so on load ids are **uniquified**:
-first occurrence keeps its id, later collisions get an `-N` suffix (`000052-2`).
-The DOM node also carries `data-emp-id`, which is what the click/drag/search code
-reads — so it never depends on dabeng's own id handling or on CSS id selectors
-(many ids start with a digit). Treat `id` as a chart key, not an ADP number.
+46 collisions). Ids are uniquified on load (first occurrence kept, collisions get
+an `-N` suffix). Node cards carry `data-emp-id`, which the drag/click/search code
+reads. Treat `id` as a chart key, not a canonical ADP number.
 
-### Divisions
+### Divisions (4 — no "Specialized")
 
-`division` is derived on load from the dept code + title (existing `division` in
-imported data is kept; otherwise derived), persisted on each record, included in
-export, and editable in the modal. Derivation order (first match wins):
+Derived on load from dept code + title (existing valid `division` is kept;
+legacy "Specialized" falls through to re-derivation → Freight). Order, first
+match wins:
 
-| Division     | Rule                                                      | Accent  | Hex      |
-|--------------|-----------------------------------------------------------|---------|----------|
-| C-Suite      | dept `OWNERS`, or title has Chief/CEO/COO/CFO/CCO/President| red     | #D32F2F  |
-| Specialized  | dept starts with `SPE`                                    | amber   | #D97706  |
-| Warehousing  | dept contains `WHS`/`WAR`/`WPL`, or `NLFPRO`              | charcoal| #1F2937  |
-| Freight      | dept contains `FRT`/`TRA`/`HOU`, or `ATLOPS`              | slate   | #6B7280  |
-| Support      | everything else (`ACC`, `ITD`, `HUMRES`, `BOOKKP`, `OFF`) | teal    | #0F766E  |
+| Division     | Rule                                                          | Border  | Hex     |
+|--------------|---------------------------------------------------------------|---------|---------|
+| C-Suite      | dept `OWNERS`, or title has Chief/CEO/COO/CFO/CCO/President/VP | red     | #D32F2F |
+| Warehousing  | dept contains `WHS`/`WAR`/`WPL`, or `NLFPRO`                  | charcoal| #1F2937 |
+| Freight      | dept contains `FRT`/`TRA`/`HOU`, `ATLOPS`, or starts with `SPE`| slate   | #6B7280 |
+| Support      | everything else (`ACC`, `ITD`, `HUMRES`, `BOOKKP`, `OFF`, …)  | teal    | #0F766E |
 
-(Specialized is checked before Warehousing/Freight so `SPEOFF` → Specialized, not
-Support; Warehousing before Freight so `TRAWAR` → Warehousing.)
+C-Suite is checked first, so an SPE employee with a "VP" title (e.g. "VP, PSL CA
+& US") classifies as C-Suite, not Freight. Seed distribution: Warehousing 122,
+Support 54, Freight 34, C-Suite 10. Editable per-employee in the modal.
 
 ## Persistence
 
-- **State key:** `proactive-restructure-state-v2` — full wrapper saved on every change.
-- **Original snapshot:** `proactive-restructure-original-v2` (written on first load
-  so Reset works offline).
-- **Filter:** `proactive-restructure-filter-v2` (active division filter persists).
-- **Boot order:** localStorage → else `fetch(employees.json)` → else in-app banner.
+- **State:** `proactive-restructure-state-v3` (new key so old broken state never
+  loads). Full wrapper saved on every change.
+- **Original snapshot:** `proactive-restructure-original-v3` (for offline Reset).
+- **Filter:** `proactive-restructure-filter-v3`.
+- **Boot:** localStorage → else `fetch(employees.json)` → else in-app banner.
 
 ## Features
 
-- Org chart of all non-terminated employees; node card = name (bold) / title /
-  dept · location / "On Leave" badge, with a division-colored left border.
-- **Drag a node onto another** to reparent (`draggable: true`); the `nodedrop`
-  handler updates `pid` and auto-saves. **pan**/**zoom** enabled.
-- **Click a node** (delegated `$('#chart-container').on('click','.node')`) → modal
-  to edit name/title/dept/location/division, Terminate, or Delete. Terminating or
-  deleting a manager re-homes their reports to the manager above.
-- **Division filter bar** ([All] + 5 divisions): dims non-matching nodes to ~25%
-  opacity (structure stays visible); persisted in localStorage.
-- **Search** (name + title + dept, fuzzy/subsequence): highlights matches with a
-  yellow outline and scrolls to the first match; clear button resets.
-- **Terminated sidebar** (toggle): click an entry to reinstate (under original
-  manager, or CEO if gone).
-- **Export JSON** (same wrapper schema, round-trippable) / **Import JSON**.
-- **Print / PDF** via OrgChart's `export()` (html2canvas + jsPDF); falls back to
-  the browser print dialog if unavailable.
+- Tree org chart, orthogonal connectors. Spacing: `nodeWidth 220`, `nodeHeight
+  110`, `childrenMargin 40`, `siblingsMargin 20`, `compactMarginBetween 12` (note
+  d3-org-chart wants these as **functions**, e.g. `.nodeWidth(()=>220)`).
+- **Drag-to-reparent:** d3-org-chart 3.1.1 has **no built-in DnD**, so it's
+  implemented with `d3.drag` on the card + `elementsFromPoint` hit-testing. On
+  drop the dragged node's `pid` is set to the target and saved; cycles (dropping
+  onto a descendant) and dragging the CEO are blocked. A small (<5px) drag is
+  treated as a click → opens the edit modal.
+- **Zoom:** `scaleExtent([0.1, 2.5])`, `duration(400)`; wheel sensitivity tamed
+  ~5× via `chart.zoomBehavior().wheelDelta(...)`. Floating controls (bottom-left):
+  Zoom In/Out → `zoomIn()`/`zoomOut()`, Fit → `fit()`, Reset → `expandAll()+fit()`
+  (the library has no `reset()`).
+- **Click a node** → edit modal (name/title/dept/location/division), Terminate,
+  Delete. Terminating/deleting a manager re-homes their reports upward.
+- **Division filter bar** ([All] + 4 divisions): dims non-matching cards to ~22%;
+  persisted.
+- **Search** (name+title+dept, fuzzy): instant yellow-highlight + count on every
+  keystroke; centers on the first match (`setCentered`+`setHighlighted`) after a
+  short pause; clear button.
+- **Terminated sidebar** (toggle): click to reinstate.
+- **Export JSON** (same wrapper schema, round-trips) / **Import JSON**.
+- **Print/PDF:** `chart.exportImg({full:true,...})` → the PNG is wrapped in a PDF
+  via jsPDF (fits A4, orientation by aspect); falls back to `window.print()`.
 
 ## Conventions
 
-- Single `index.html` for app code; data in `employees.json`.
-- CDN deps only; no npm/build step. jQuery is available; use it for chart/node DOM,
-  vanilla JS elsewhere. Never bind chart node handlers directly — use delegation on
-  `#chart-container` so they survive re-renders.
-- No `innerHTML` with user data (names/titles set via jQuery `.text()` / `textContent`).
-- Brand palette in `:root`. dabeng node colors come from these via CSS classes
-  (`.division-*`, `.node`, `.node-sub`, `.node-badge`).
+- Single `index.html` for app code; data in `employees.json`. CDN deps only, no build.
+- d3-org-chart re-renders rebuild all node DOM, so re-attach drag + re-apply
+  filter/search classes after every render (see `postRender()`).
+- No `innerHTML` with unescaped user data — `nodeContent` HTML strings run through
+  `escapeHtml()`.
+- Brand palette in `:root` (no amber after Specialized was dropped). Division
+  border colors are CSS classes `.oc-card.division-*`.
 
 ## How to run / test
 
-The app `fetch()`es a local file, so opening `index.html` directly (`file://`) is
-blocked. Serve the folder:
+The app `fetch()`es a local file, so `file://` is blocked. Serve the folder:
 
 ```bash
 cd proactive-restructure
 python3 -m http.server 8000   # then open http://localhost:8000
 ```
 
-Manual checks: all 220 nodes render under the CEO; drag a node onto another and
-reload (reparent persists); click opens the edit modal; search highlights + scrolls;
-division filter dims correctly and persists across reload; colored left borders match
-divisions; Print/PDF produces a file.
+Manual checks: 220 nodes render under the CEO with orthogonal connectors; drag 3
+nodes to new managers and reload (reparent persists); click opens the modal;
+search highlights + centers; division filters dim; zoom feels smooth via wheel +
+buttons; Print/PDF produces a usable PDF.
 
-Headless checks (no browser; can't verify rendering/drag/PDF):
+Headless checks (no browser):
 
 ```bash
+# JS parses
 node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');const m=h.match(/<script>\s*\"use strict\"[\s\S]*?<\/script>/);new (require('vm').Script)(m[0].replace(/^<script>/,'').replace(/<\/script>$/,''));console.log('JS OK');"
+# data is 220 rows
 node -e "console.log('employees:', require('./employees.json').employees.length);"
 ```
+
+A deeper headless render check (jsdom + d3 + d3-flextree + d3-org-chart, with a
+stubbed canvas) confirms all 220 cards render and division classes apply; it
+cannot exercise drag/zoom/PDF/visual layout — those need a real browser.
