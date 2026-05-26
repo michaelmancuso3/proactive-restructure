@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proactive Supply Chain Group — Org Restructuring</title>
+  <style>
+    :root {
+      --psc-red: #D32F2F;
+      --psc-red-dark: #B71C1C;
+      --psc-charcoal: #1F2937;
+      --psc-slate: #6B7280;
+      --psc-muted: #9CA3AF;
+      --bg: #F9FAFB;
+      --card: #FFFFFF;
+      --border: #E5E7EB;
+      --text: #111827;
+      --text-secondary: #6B7280;
+      --radius: 8px;
+      --shadow: 0 1px 2px rgba(17, 24, 39, 0.06), 0 1px 3px rgba(17, 24, 39, 0.08);
+      --shadow-hover: 0 4px 10px rgba(17, 24, 39, 0.10), 0 2px 4px rgba(17, 24, 39, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- Header / toolbar ---- */
+    .app-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding: 28px 32px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+    .kicker {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--psc-red);
+      margin: 0 0 4px;
+    }
+    .app-title { font-size: 24px; font-weight: 700; margin: 0; }
+    .app-sub { font-size: 13px; color: var(--text-secondary); margin: 4px 0 0; }
+
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+    }
+    .btn:hover { border-color: var(--psc-red); color: var(--psc-red); }
+    .btn:focus-visible { outline: 2px solid var(--psc-red); outline-offset: 2px; }
+    .btn-primary { background: var(--psc-red); border-color: var(--psc-red); color: #fff; }
+    .btn-primary:hover { background: var(--psc-red-dark); border-color: var(--psc-red-dark); color: #fff; }
+
+    /* ---- Board ---- */
+    .board { padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 24px; }
+
+    .section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--card);
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      color: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .section-count {
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.22);
+      padding: 2px 9px;
+      border-radius: 999px;
+      min-width: 24px;
+      text-align: center;
+    }
+    .section-body { padding: 18px; }
+
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .column { display: flex; flex-direction: column; gap: 10px; }
+    .column-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--border);
+    }
+    .column-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      background: var(--bg);
+      padding: 1px 7px;
+      border-radius: 999px;
+    }
+
+    .dropzone {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+      align-content: start;
+      min-height: 64px;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background 0.12s ease, box-shadow 0.12s ease;
+    }
+    .dropzone:empty { border: 1px dashed var(--border); }
+    .dropzone:empty::after {
+      content: "Drop here";
+      grid-column: 1 / -1;
+      color: var(--psc-muted);
+      font-size: 12px;
+      text-align: center;
+      padding: 14px 0;
+    }
+    .dropzone.dragover {
+      background: rgba(211, 47, 47, 0.06);
+      box-shadow: inset 0 0 0 2px var(--psc-red);
+    }
+
+    /* ---- Cards ---- */
+    .card {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      cursor: grab;
+      transition: box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+    .card:hover { box-shadow: var(--shadow-hover); border-color: #D8DBE0; }
+    .card:active { cursor: grabbing; }
+    .card.dragging { opacity: 0.4; }
+    .card-main { min-width: 0; }
+    .card-name { font-size: 14px; font-weight: 600; word-break: break-word; }
+    .card-role { font-size: 12px; color: var(--text-secondary); margin-top: 2px; word-break: break-word; }
+    .card-actions { display: flex; gap: 2px; flex-shrink: 0; }
+    .icon-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-secondary);
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
+      font-size: 14px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover { background: var(--bg); color: var(--psc-red); }
+    .icon-btn:focus-visible { outline: 2px solid var(--psc-red); outline-offset: 1px; }
+    .icon-danger { font-size: 18px; }
+
+    .card-terminated .card-name { color: var(--psc-muted); text-decoration: line-through; }
+    .card-terminated .card-role { color: var(--psc-muted); }
+
+    /* ---- Modal ---- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 50;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 40px rgba(17, 24, 39, 0.25);
+      overflow: hidden;
+    }
+    .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 16px; font-weight: 700; margin: 0; }
+    .modal-body { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .field input, .field select {
+      font: inherit;
+      font-size: 14px;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--psc-red);
+      box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.12);
+    }
+    .field input.invalid { border-color: var(--psc-red); }
+    .modal-footer {
+      padding: 16px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* ---- Print ---- */
+    @media print {
+      .toolbar, .overlay, .no-print, .card-actions { display: none !important; }
+      body { background: #fff; }
+      .app-header { padding: 0 0 12px; border: none; }
+      .board { padding: 0; gap: 16px; }
+      .section { border: 1px solid #ccc; break-inside: avoid; }
+      .card { box-shadow: none; break-inside: avoid; cursor: default; }
+      .dropzone:empty { border: none; }
+      .dropzone:empty::after { content: ""; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="titles">
+      <p class="kicker">Proactive Supply Chain Group</p>
+      <h1 class="app-title">Org Restructuring</h1>
+      <p class="app-sub">Drag employees between teams to model the new structure. Changes save automatically.</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-primary" id="btn-add" type="button">+ Add Employee</button>
+      <button class="btn" id="btn-export" type="button">Export JSON</button>
+      <button class="btn" id="btn-import" type="button">Import JSON</button>
+      <button class="btn" id="btn-print" type="button">Print / PDF</button>
+      <button class="btn" id="btn-reset" type="button">Reset to Original</button>
+    </div>
+  </header>
+
+  <main class="board" id="board"></main>
+
+  <!-- Add / Edit modal -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Add Employee</h2>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="field-name">Name</label>
+          <input type="text" id="field-name" autocomplete="off" placeholder="e.g. Sarah Chen">
+        </div>
+        <div class="field">
+          <label for="field-role">Role / Title</label>
+          <input type="text" id="field-role" autocomplete="off" placeholder="e.g. Chief Operating Officer">
+        </div>
+        <div class="field" id="field-section-wrap">
+          <label for="field-section">Starting Section</label>
+          <select id="field-section"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="modal-save" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="import-file" accept="application/json,.json" hidden>
+
+  <script>
+    "use strict";
+
+    // ---- Configuration ----
+    var STORAGE_KEY = "proactive-restructure-state";
+
+    // Section layout. Each "zone" is a drop target identified by a stable id.
+    var SECTIONS = [
+      {
+        id: "c-suite",
+        label: "C-Suite",
+        kind: "single",
+        accentVar: "--psc-red",
+        zones: [{ id: "c-suite", label: "C-Suite" }]
+      },
+      {
+        id: "warehousing",
+        label: "Warehousing",
+        kind: "multi",
+        accentVar: "--psc-charcoal",
+        zones: [
+          { id: "warehousing-toronto", label: "Toronto" },
+          { id: "warehousing-montreal", label: "Montreal" },
+          { id: "warehousing-la", label: "LA" },
+          { id: "warehousing-houston", label: "Houston" }
+        ]
+      },
+      {
+        id: "freight",
+        label: "Freight",
+        kind: "multi",
+        accentVar: "--psc-slate",
+        zones: [
+          { id: "freight-canada", label: "Canada" },
+          { id: "freight-us", label: "US" },
+          { id: "freight-mexico", label: "Mexico" }
+        ]
+      },
+      {
+        id: "terminated",
+        label: "Terminated",
+        kind: "single",
+        accentVar: "--psc-muted",
+        zones: [{ id: "terminated", label: "Terminated" }]
+      }
+    ];
+
+    // Flat set of valid zone ids + ordered list for the section dropdown.
+    var ZONE_IDS = new Set();
+    var ZONE_OPTIONS = [];
+    SECTIONS.forEach(function (section) {
+      section.zones.forEach(function (zone) {
+        ZONE_IDS.add(zone.id);
+        ZONE_OPTIONS.push({
+          id: zone.id,
+          label: section.kind === "multi" ? section.label + " – " + zone.label : section.label
+        });
+      });
+    });
+
+    // ---- Original seed data (placeholders until the real roster is provided) ----
+    var ORIGINAL_STATE = {
+      version: 1,
+      employees: [
+        { id: "emp-1", name: "Sarah Chen", role: "Chief Executive Officer", section: "c-suite" },
+        { id: "emp-2", name: "Marcus Reid", role: "Chief Operating Officer", section: "c-suite" },
+        { id: "emp-3", name: "Priya Nair", role: "Chief Financial Officer", section: "c-suite" },
+        { id: "emp-4", name: "David Okafor", role: "Chief Supply Chain Officer", section: "c-suite" },
+
+        { id: "emp-5", name: "James Whitfield", role: "Warehouse Director", section: "warehousing-toronto" },
+        { id: "emp-6", name: "Lena Petrov", role: "Inventory Manager", section: "warehousing-toronto" },
+        { id: "emp-7", name: "Tom Bradley", role: "Shift Supervisor", section: "warehousing-toronto" },
+
+        { id: "emp-8", name: "Élise Tremblay", role: "Warehouse Manager", section: "warehousing-montreal" },
+        { id: "emp-9", name: "Hugo Bélanger", role: "Logistics Coordinator", section: "warehousing-montreal" },
+        { id: "emp-10", name: "Camille Roy", role: "Receiving Lead", section: "warehousing-montreal" },
+
+        { id: "emp-11", name: "Diego Morales", role: "Warehouse Manager", section: "warehousing-la" },
+        { id: "emp-12", name: "Aisha Reed", role: "Operations Lead", section: "warehousing-la" },
+        { id: "emp-13", name: "Kevin Tran", role: "Forklift Supervisor", section: "warehousing-la" },
+
+        { id: "emp-14", name: "Brett Coleman", role: "Warehouse Manager", section: "warehousing-houston" },
+        { id: "emp-15", name: "Maria Gonzalez", role: "Inventory Lead", section: "warehousing-houston" },
+        { id: "emp-16", name: "Wade Foster", role: "Shift Supervisor", section: "warehousing-houston" },
+
+        { id: "emp-17", name: "Nathan Cole", role: "Freight Operations Manager", section: "freight-canada" },
+        { id: "emp-18", name: "Sophie Lambert", role: "Dispatch Coordinator", section: "freight-canada" },
+        { id: "emp-19", name: "Ryan Mercer", role: "Fleet Supervisor", section: "freight-canada" },
+
+        { id: "emp-20", name: "Angela Brooks", role: "Freight Manager", section: "freight-us" },
+        { id: "emp-21", name: "Carlos Rivera", role: "Route Planner", section: "freight-us" },
+        { id: "emp-22", name: "Derek Shaw", role: "Dispatch Lead", section: "freight-us" },
+
+        { id: "emp-23", name: "Lucía Hernández", role: "Freight Manager", section: "freight-mexico" },
+        { id: "emp-24", name: "Mateo Vargas", role: "Customs Coordinator", section: "freight-mexico" },
+        { id: "emp-25", name: "Renata Cruz", role: "Dispatch Lead", section: "freight-mexico" }
+      ]
+    };
+
+    // ---- State ----
+    var state = { version: 1, employees: [] };
+
+    function cloneOriginal() {
+      return JSON.parse(JSON.stringify(ORIGINAL_STATE));
+    }
+
+    function newId() {
+      return "emp-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+    }
+
+    // Coerce arbitrary loaded/imported data into a known-good shape.
+    function normalize(raw) {
+      var list = raw && Array.isArray(raw.employees) ? raw.employees : [];
+      var employees = list.map(function (e) {
+        e = e || {};
+        return {
+          id: typeof e.id === "string" && e.id ? e.id : newId(),
+          name: String(e.name == null ? "" : e.name).trim() || "Unnamed",
+          role: String(e.role == null ? "" : e.role).trim(),
+          section: ZONE_IDS.has(e.section) ? e.section : "terminated"
+        };
+      });
+      return { version: 1, employees: employees };
+    }
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.employees)) {
+            return normalize(parsed);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load saved state, starting from original:", err);
+      }
+      return cloneOriginal();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn("Could not save state:", err);
+      }
+    }
+
+    // ---- Rendering ----
+    var board = document.getElementById("board");
+
+    function employeesIn(zoneId) {
+      return state.employees.filter(function (e) { return e.section === zoneId; });
+    }
+
+    function createCard(emp) {
+      var card = document.createElement("div");
+      card.className = "card" + (emp.section === "terminated" ? " card-terminated" : "");
+      card.draggable = true;
+      card.dataset.id = emp.id;
+
+      var main = document.createElement("div");
+      main.className = "card-main";
+      var nameEl = document.createElement("div");
+      nameEl.className = "card-name";
+      nameEl.textContent = emp.name;
+      var roleEl = document.createElement("div");
+      roleEl.className = "card-role";
+      roleEl.textContent = emp.role || "—";
+      main.appendChild(nameEl);
+      main.appendChild(roleEl);
+
+      var actions = document.createElement("div");
+      actions.className = "card-actions";
+
+      var editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "icon-btn";
+      editBtn.title = "Edit";
+      editBtn.setAttribute("aria-label", "Edit " + emp.name);
+      editBtn.textContent = "✎";
+      editBtn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        openEditModal(emp.id);
+      });
+      actions.appendChild(editBtn);
+
+      if (emp.section !== "terminated") {
+        var termBtn = document.createElement("button");
+        termBtn.type = "button";
+        termBtn.className = "icon-btn icon-danger";
+        termBtn.title = "Send to Terminated";
+        termBtn.setAttribute("aria-label", "Send " + emp.name + " to Terminated");
+        termBtn.textContent = "×";
+        termBtn.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          terminate(emp.id);
+        });
+        actions.appendChild(termBtn);
+      }
+
+      card.appendChild(main);
+      card.appendChild(actions);
+
+      card.addEventListener("dragstart", function (ev) {
+        ev.dataTransfer.setData("text/plain", emp.id);
+        ev.dataTransfer.effectAllowed = "move";
+        card.classList.add("dragging");
+      });
+      card.addEventListener("dragend", function () {
+        card.classList.remove("dragging");
+      });
+
+      return card;
+    }
+
+    function createDropzone(zoneId) {
+      var zone = document.createElement("div");
+      zone.className = "dropzone";
+      zone.dataset.zone = zoneId;
+
+      employeesIn(zoneId).forEach(function (emp) {
+        zone.appendChild(createCard(emp));
+      });
+
+      zone.addEventListener("dragover", function (ev) {
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = "move";
+        zone.classList.add("dragover");
+      });
+      zone.addEventListener("dragleave", function (ev) {
+        if (!zone.contains(ev.relatedTarget)) {
+          zone.classList.remove("dragover");
+        }
+      });
+      zone.addEventListener("drop", function (ev) {
+        ev.preventDefault();
+        zone.classList.remove("dragover");
+        var id = ev.dataTransfer.getData("text/plain");
+        var emp = state.employees.find(function (e) { return e.id === id; });
+        if (emp && emp.section !== zoneId) {
+          emp.section = zoneId;
+          saveState();
+          render();
+        }
+      });
+
+      return zone;
+    }
+
+    function buildSection(section) {
+      var sec = document.createElement("section");
+      sec.className = "section section-" + section.id;
+      if (section.id === "terminated") {
+        sec.classList.add("no-print");
+      }
+
+      var header = document.createElement("div");
+      header.className = "section-header";
+      header.style.background = "var(" + section.accentVar + ")";
+
+      var title = document.createElement("span");
+      title.className = "section-title";
+      title.textContent = section.label;
+
+      var count = document.createElement("span");
+      count.className = "section-count";
+      var sectionTotal = state.employees.filter(function (e) {
+        return section.zones.some(function (z) { return z.id === e.section; });
+      }).length;
+      count.textContent = String(sectionTotal);
+
+      header.appendChild(title);
+      header.appendChild(count);
+      sec.appendChild(header);
+
+      var body = document.createElement("div");
+      body.className = "section-body";
+
+      if (section.kind === "single") {
+        body.appendChild(createDropzone(section.zones[0].id));
+      } else {
+        var cols = document.createElement("div");
+        cols.className = "columns";
+        section.zones.forEach(function (zone) {
+          var col = document.createElement("div");
+          col.className = "column";
+
+          var label = document.createElement("div");
+          label.className = "column-label";
+          label.appendChild(document.createTextNode(zone.label));
+          var badge = document.createElement("span");
+          badge.className = "column-count";
+          badge.textContent = String(employeesIn(zone.id).length);
+          label.appendChild(badge);
+
+          col.appendChild(label);
+          col.appendChild(createDropzone(zone.id));
+          cols.appendChild(col);
+        });
+        body.appendChild(cols);
+      }
+
+      sec.appendChild(body);
+      return sec;
+    }
+
+    function render() {
+      board.textContent = "";
+      SECTIONS.forEach(function (section) {
+        board.appendChild(buildSection(section));
+      });
+    }
+
+    // ---- Actions ----
+    function terminate(id) {
+      var emp = state.employees.find(function (e) { return e.id === id; });
+      if (emp && emp.section !== "terminated") {
+        emp.section = "terminated";
+        saveState();
+        render();
+      }
+    }
+
+    function exportJSON() {
+      var data = {
+        app: "proactive-restructure",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        employees: state.employees
+      };
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var now = new Date();
+      var stamp = now.getFullYear() + "-" +
+        String(now.getMonth() + 1).padStart(2, "0") + "-" +
+        String(now.getDate()).padStart(2, "0");
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "proactive-org-" + stamp + ".json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(file) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var data;
+        try {
+          data = JSON.parse(reader.result);
+        } catch (err) {
+          alert("Could not read that file — it is not valid JSON.");
+          return;
+        }
+        if (!data || !Array.isArray(data.employees)) {
+          alert("That file does not look like an org export (no \"employees\" list found).");
+          return;
+        }
+        state = normalize(data);
+        saveState();
+        render();
+      };
+      reader.onerror = function () {
+        alert("Could not read that file.");
+      };
+      reader.readAsText(file);
+    }
+
+    function resetToOriginal() {
+      if (confirm("Reset to the original org chart? This will discard all current changes.")) {
+        state = cloneOriginal();
+        saveState();
+        render();
+      }
+    }
+
+    // ---- Modal ----
+    var overlay = document.getElementById("overlay");
+    var modalTitle = document.getElementById("modal-title");
+    var nameInput = document.getElementById("field-name");
+    var roleInput = document.getElementById("field-role");
+    var sectionWrap = document.getElementById("field-section-wrap");
+    var sectionSelect = document.getElementById("field-section");
+    var modalMode = null;
+    var modalEmpId = null;
+
+    function populateSectionSelect() {
+      sectionSelect.textContent = "";
+      ZONE_OPTIONS.forEach(function (opt) {
+        var o = document.createElement("option");
+        o.value = opt.id;
+        o.textContent = opt.label;
+        sectionSelect.appendChild(o);
+      });
+    }
+
+    function openModal() {
+      overlay.classList.add("open");
+      nameInput.classList.remove("invalid");
+      window.setTimeout(function () { nameInput.focus(); }, 0);
+    }
+
+    function closeModal() {
+      overlay.classList.remove("open");
+      modalMode = null;
+      modalEmpId = null;
+    }
+
+    function openAddModal() {
+      modalMode = "add";
+      modalEmpId = null;
+      modalTitle.textContent = "Add Employee";
+      nameInput.value = "";
+      roleInput.value = "";
+      populateSectionSelect();
+      sectionSelect.value = "c-suite";
+      sectionWrap.style.display = "";
+      openModal();
+    }
+
+    function openEditModal(id) {
+      var emp = state.employees.find(function (e) { return e.id === id; });
+      if (!emp) { return; }
+      modalMode = "edit";
+      modalEmpId = id;
+      modalTitle.textContent = "Edit Employee";
+      nameInput.value = emp.name;
+      roleInput.value = emp.role;
+      sectionWrap.style.display = "none";
+      openModal();
+    }
+
+    function saveModal() {
+      var name = nameInput.value.trim();
+      var role = roleInput.value.trim();
+      if (!name) {
+        nameInput.classList.add("invalid");
+        nameInput.focus();
+        return;
+      }
+      if (modalMode === "add") {
+        state.employees.push({
+          id: newId(),
+          name: name,
+          role: role,
+          section: sectionSelect.value
+        });
+      } else if (modalMode === "edit") {
+        var emp = state.employees.find(function (e) { return e.id === modalEmpId; });
+        if (emp) {
+          emp.name = name;
+          emp.role = role;
+        }
+      }
+      closeModal();
+      saveState();
+      render();
+    }
+
+    // ---- Wiring ----
+    var importFile = document.getElementById("import-file");
+
+    document.getElementById("btn-add").addEventListener("click", openAddModal);
+    document.getElementById("btn-export").addEventListener("click", exportJSON);
+    document.getElementById("btn-print").addEventListener("click", function () { window.print(); });
+    document.getElementById("btn-reset").addEventListener("click", resetToOriginal);
+    document.getElementById("btn-import").addEventListener("click", function () {
+      importFile.click();
+    });
+    importFile.addEventListener("change", function () {
+      if (importFile.files && importFile.files[0]) {
+        importJSON(importFile.files[0]);
+      }
+      importFile.value = "";
+    });
+
+    document.getElementById("modal-cancel").addEventListener("click", closeModal);
+    document.getElementById("modal-save").addEventListener("click", saveModal);
+    overlay.addEventListener("click", function (ev) {
+      if (ev.target === overlay) { closeModal(); }
+    });
+    [nameInput, roleInput].forEach(function (input) {
+      input.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          saveModal();
+        }
+      });
+      input.addEventListener("input", function () {
+        input.classList.remove("invalid");
+      });
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && overlay.classList.contains("open")) {
+        closeModal();
+      }
+    });
+
+    // ---- Init ----
+    state = loadState();
+    render();
+  </script>
+</body>
+</html>
